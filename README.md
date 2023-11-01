@@ -47,6 +47,8 @@ equals와 hashcode 비교 메서드 처리시 입력한 값을 기준으로만 �
         URI createdUri = linkTo(methodOn(EventController.class).createEvent()).slash("{id}").toUri();
 ## C. ResponseEntity의 body에 객체 넣기
         return ResponseEntity.created(createdUri).body(event);//.build() 대신 body() 사용
+## D. JPA로 repository 만들기: 인터페이스로 상속받아서 구현 처리
+    public interface EventRepository extends JpaRepository<Event,Integer> 
 
 # III. 비즈니스 로직 관련
 ## A. Event API 비즈니스 로직
@@ -103,6 +105,8 @@ equals와 hashcode 비교 메서드 처리시 입력한 값을 기준으로만 �
         MockMvc mockMvc; //웹과 같은 환경으로 테스트(계층별 테스트: slicing test)
         @Autowired
         ObjectMapper objectMapper;// json으로 변환
+        @MockBean // 이 bean을 MockBean으로 만들어 줌.
+        EventRepository eventRepository;//repository는 webBean이 아니어서 주입되지 않음
     
         ...data...
    
@@ -121,3 +125,9 @@ equals와 hashcode 비교 메서드 처리시 입력한 값을 기준으로만 �
         }
     }
 
+## C. TDD 진행시 주의사항
+### 1. 가능한 정해진 variable을 사용한다
+        .andExpect(header().exists(HttpHeaders.LOCATION)) //"location"보다는 HttpHeaders.Location
+        .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))\
+### 2. TDD는 보통 데이터 3개 정도를 넣고 진행 
+        
