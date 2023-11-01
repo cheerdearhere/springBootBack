@@ -2,6 +2,7 @@ package com.backkeesun.inflearnrestapi.events;
 
 import lombok.*;
 
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Builder
@@ -10,9 +11,13 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @EqualsAndHashCode(of= "id") //id값을 기준으로만 해당 객체 비교
+@Entity // for JPA
 public class Event {
 //    base data
+    @Id @GeneratedValue
+    @Column(name="event_id")
     private Integer id; // Identifier: PK
+
     private String name;
     private String description;
 //    time checkers
@@ -36,5 +41,8 @@ public class Event {
     private int limitOfEnrollment; //최대 event
     private boolean offline;
     private boolean free;
+
+    @Enumerated(EnumType.STRING)
     private EventStatus eventStatus;
+
 }
