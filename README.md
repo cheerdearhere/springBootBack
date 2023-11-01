@@ -34,3 +34,58 @@ java 11, spring boot 2.x.x(maven), postgresql, h2(test), JPA, Lombok, restdocs
     13ver 사용.
     CREATE USER {ID} PASSWORD '{PASSWORD}' + 권한(테스트는 SUPERUSER);
     CREATE DATABASE {DATABASE_TITLE} OWNER {OWNER_ID};
+
+# Annotation 처리 결과 보기: target 폴더
+target 폴더에 생성된 class들을 보면 어노테이션으로 넘어간 method, data, constructor 등의 결과를 직접 확인할 수 있다.
+
+# @EqualsAndHashCode(of= {"id", "name"}) / @EqualsAndHashCode(of= "id")
+equals와 hashcode 비교 메서드 처리시 입력한 값을 기준으로만 해당 객체 비교. 단, 연관관계가 있는 데이터가 있는 경우에는 구현체에서 서로 무한 비교하다가 stackOverFlow가 발생할 수 있어 사용 x
+
+# Entity에 @Data를 쓰지않는 이유
+@Data에는 아래의 어노테이션을 모두 포함하지만 @EqualsAndHashCode는 모든 properties를 검색하도록하므로 stack over flow를 발생시킬 수 있다.
+
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Getter
+    @Setter
+    @EqualsAndHashCode(of= "id") //지정해서 사용할 것을 권장
+
+# Event API 비즈니스 로직
+### parameters
+    - name
+    - description
+    - beginEnrollmentDateTime
+    - closeEnrollmentDateTime
+    - beginEventDateTime
+    - endEventDateTime
+    - location
+    - basePrice
+    - maxPrice
+    - limitOfEnrollment
+### price 로직
+    base    max     logic
+    0       100     선착순
+    0       0       무료
+    100     0       무제한 경매
+    100     100     선착순 경매(순위꿘)
+### response data
+    id
+    name
+    description
+    beginEnrollmentDateTime
+    closeEnrollmentDateTime
+    beginEventDateTime
+    endEventDateTime
+    location
+    basePrice
+    maxPrice
+    limitOfEnrollment
+    eventStatus
+    offline
+    free
+    _links
+        profile
+        self
+        publish
+        ...
