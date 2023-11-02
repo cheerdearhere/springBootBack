@@ -86,6 +86,63 @@ dependency 주입
         ...
     Event event = modelMapper.map(eventDto,Event.class);
 
+## G. BadRequest:400 처리하기
+### 1. 불필요한 값이 전달된경우 fail response 처리하기
+불필요한 값을 무시할지 체크할지 개발자가 결정
+ModelMapping library를 사용하는 경우 설정만 변경(application.yml/properties)
+
+    spring:
+        jackson:
+            deserialization:
+                fail-on-unknown-properties: true # mapping 과정에서 불필요가 있는경우 fail 처리
+### 2. Spring MVC 기능 이용하기
+a. 값이 없는 경우 :controller에 @Valid 삽입, param으로 Error 객체 받음
+
+    @PostMapping
+    public ResponseEntity createEvent(@RequestBody @Valid EventDto eventDto, Errors errors){
+        if(errors.hasErrors()){
+            return ResponseEntity.badRequest().build();
+        }
+        ...
+
+parameter로 사용하는 DTO에서 validation의 어노테이션 사용
+
+    @NotEmpty //String은 Empty
+    private String name;
+    @NotNull //값은 null
+    private LocalDateTime endEventDateTime; // 종료 시간
+    private String location; //optional
+    @Min(0)
+    private int basePrice; // optional이지만 양수
+
+### 3. customized validation bean (만들어서 사용)
+컴포넌트를 새로 작성하고
+
+    @Component
+    public class EventValidation {
+        public void validate(EventDto eventDto, Errors errors){
+            if(eventDto.getBasePrice() > eventDto.getMaxPrice() && eventDto.getMaxPrice() > 0){
+                errors.rejectValue("basePrice","wrong input value","basePrice can't be larger than maxPrice");
+                errors.rejectValue("maxPrice","wrong input value","maxPrice can't be smaller than basePrice and 0");
+            }
+        }
+    }
+
+컨트롤러에서 적용
+
+    public class EventController {
+    
+        private final EventRepository eventRepository;
+        private final ModelMapper modelMapper;
+        private final EventValidation eventValidation;
+    
+        @PostMapping
+        public ResponseEntity createEvent(@RequestBody @Valid EventDto eventDto, Errors errors){
+            eventValidation.validate(eventDto,errors);
+            if(errors.hasErrors()){
+                return ResponseEntity.badRequest().build();
+            }
+            ...
 
 # III. 비즈니스 로직 관련
 ## A. Event API 비즈니스 로직
@@ -167,3 +224,40 @@ dependency 주입
         .andExpect(header().exists(HttpHeaders.LOCATION)) //"location"보다는 HttpHeaders.Location
         .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))\
 ### 2. TDD는 보통 데이터 3개 정도를 넣고 진행
+### 3. Test 진행시 test 명칭 변경하기
+a. 테스트 코드의 명칭을 직접 변경(한글도 가능) 단, 띄어쓰기 불가
+
+    @Test
+    void 빌드확인(){
+        //given
+        //when
+        Event event = Event.builder()
+                .name("Inflearn Spring Boot")
+                .description("REST API development with Spring boot")
+                .build();
+        //then
+        assertThat(event).isNotNull();
+    }
+b. Junit5인경우: @DisplayName(value) 사용하기
+
+    @Test
+    @DisplayName(value = "정상 처리된 경우 확인")
+    void createEvent() throws Exception {
+        //given
+        EventDto event = EventDto.builder()
+        ...
+
+c. Junit4인경우: 직접 test용 description 작성하기
+
+    @Target(ElementType.METHOD) // 대상
+    @Retention(RetentionPolicy.SOURCE) // life cycle
+    public @interface TestDescription {
+        String value(); //입력값.
+        String useDefault() default "a"; //기본값을 지정하는 경우
+    }
+작성 후 test에서 사용주석 대신 사용... test 코드는 그대로 나옴 
+
+    @Test
+    @TestDescription(value = "잘못된 값이 입력 됐을때 response code 체크")
+    void createEvent_BadRequest_WrongData() throws Exception{
+Junit 5 사용을 권장.
