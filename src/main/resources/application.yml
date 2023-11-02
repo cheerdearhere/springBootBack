@@ -2,8 +2,12 @@
 server:
   port: 8181
 #
+
+spring:
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true # mapping 과정에서 불필요가 있는경우 fail 처리
 #  # Database
-#spring:
 #  #postgre
 #  datasource:
 #    url: jdbc:postgresql://localhost:5432/jpa
@@ -15,7 +19,7 @@ server:
 ##    username: sa
 ##    password:
 ##    driver-class-name: org.h2.Driver
-#  jpa:
+  jpa:
 #    properties:
 #      hibernate:
 #        ddl-auto: create-drop
@@ -23,4 +27,10 @@ server:
 #          use_jdbc_metadata_defaults: false
 #        format_sql: true
 #    database-platform: org.hibernate.dialect.PostgreSQL9Dialect
-#    show-sql: true
+    show-sql: true
+
+logging:
+  level:
+    org.hibernate:
+      sql: debug
+      type: trace
