@@ -18,6 +18,7 @@ public class EventValidation {
         endEventDateTime.isBefore(eventDto.getCloseEnrollmentDateTime())
         ){
             errors.rejectValue("endEventDateTime","wrong input value","endEventDateTime must be before other dateTimes");
+            errors.reject("globalError");
         }
         //TODO beginEventDateTime
         //TODO closeEventEnrollmentDateTime

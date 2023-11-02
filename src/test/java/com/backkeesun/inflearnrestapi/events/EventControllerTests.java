@@ -68,9 +68,8 @@ class EventControllerTests {
                 //입력된 값에 대한 제한 체크
 //                .andExpect(jsonPath("id").value(Matchers.not(10)))//dto를 사용하면서 id입력 안받음. 값 유무는 위에서 확인
                 .andExpect(jsonPath("free").value(Matchers.not(true)))//default값 확인
-                .andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT.name()))
-//                .andExpect(jsonPath("offline").value(Matchers.not(false))) 아직 내부 연산 처리 안됨
-        ;
+                .andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT.name()));
+//                .andExpect(jsonPath("offline").value(Matchers.not(false))); 아직 내부 연산 처리 안됨
         /* TDD는 보통 데이터 3개 정도를 넣고 진행 */
     }
     @Test
@@ -100,8 +99,7 @@ class EventControllerTests {
                             .content(objectMapper.writeValueAsString(event))// object를 JsonString으로 변환
                 )
                 .andDo(print())//결과 프린팅 내용을 아래에서 체크할 수 있다.
-                .andExpect(status().isBadRequest()) //isBadRequest : 400
-        ;
+                .andExpect(status().isBadRequest()); //isBadRequest : 400
     }
     @Test
     @DisplayName(value = "빈 값이 입력 됐을때 response code 체크")
@@ -109,7 +107,7 @@ class EventControllerTests {
         //given
         EventDto eventDto = EventDto.builder().build();
         //when then
-        this.mockMvc.perform(post("/api/events")
+        mockMvc.perform(post("/api/events")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON)
                         .content(objectMapper.writeValueAsString(eventDto))
@@ -118,7 +116,8 @@ class EventControllerTests {
     }
 
     @Test
-    @TestDescription(value = "잘못된 값이 입력 됐을때 response code 체크")
+//    @TestDescription(value = "잘못된 값이 입력 됐을때 response code 체크")
+    @DisplayName(value = "잘못된 값이 입력 됐을때 response code 체크")
     void createEvent_BadRequest_WrongData() throws Exception{
         //given
         EventDto eventDto = EventDto.builder()
@@ -136,11 +135,18 @@ class EventControllerTests {
                 .location("강남역 D2 스타터 팩토리")
                 .build();
         //when then
-        this.mockMvc.perform(post("/api/events")
+        mockMvc.perform(post("/api/events")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON)
                         .content(objectMapper.writeValueAsString(eventDto))
                 )
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andDo(print())
+                .andExpect(jsonPath("$[0].field").exists())
+                .andExpect(jsonPath("$[0].objectName").exists())
+                .andExpect(jsonPath("$[0].code").exists())
+                .andExpect(jsonPath("$[0].defaultMessage").exists())
+                .andExpect(jsonPath("$[0].rejectedValue").exists())
+        ;
     }
 }
