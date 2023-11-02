@@ -128,13 +128,14 @@ parameter로 사용하는 DTO에서 validation의 어노테이션 사용
         }
     }
 
-* reject 두 종류: method에 따라 Errors 객체에 입력되는 위치(properties)가 달라진다.
-reject() : globalError의 property
-rejectValue(0) : fieldError의 property(주로 사용) 
+reject 두 종류: method에 따라 Errors 객체에 입력되는 위치(properties)가 달라진다.
 
+    reject() : globalError의 property
+            errors.reject("globalError","just globalError test");
 
-    errors.rejectValue("endEventDateTime","wrong input value","endEventDateTime must be before other dateTimes");
-    errors.reject("globalError");
+    rejectValue() : fieldError의 property(주로 사용)
+        errors.rejectValue("endEventDateTime","0001","endEventDateTime must be before other dateTimes");
+
 
 컨트롤러에서 적용
 
