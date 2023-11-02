@@ -2,8 +2,12 @@
 server:
   port: 8181
 #
+
+spring:
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true # mapping 과정에서 불필요가 있는경우 fail 처리
 #  # Database
-#spring:
 #  #postgre
 #  datasource:
 #    url: jdbc:postgresql://localhost:5432/jpa
