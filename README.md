@@ -128,6 +128,14 @@ parameter로 사용하는 DTO에서 validation의 어노테이션 사용
         }
     }
 
+* reject 두 종류: method에 따라 Errors 객체에 입력되는 위치(properties)가 달라진다.
+reject() : globalError의 property
+rejectValue(0) : fieldError의 property(주로 사용) 
+
+
+    errors.rejectValue("endEventDateTime","wrong input value","endEventDateTime must be before other dateTimes");
+    errors.reject("globalError");
+
 컨트롤러에서 적용
 
     public class EventController {
@@ -143,6 +151,46 @@ parameter로 사용하는 DTO에서 validation의 어노테이션 사용
                 return ResponseEntity.badRequest().build();
             }
             ...
+### 4. 에러 응답 메세지 본문 만들기
+ResponseEntity 객체의 body에 삽입해 client가 원인을 확인하도록 함
+
+but, java bean 규칙에 따른 properties를 갖는 Event 객체와 달리 errors는 에러를 발생한다.(아래와 같이 불가)
+JSON으로 변환시킬때 ObjectMapper의 beanSerializer()를 쓰는데 이때 문제가 발생한다.
+
+    if(errors.hasErrors()){
+        return ResponseEntity.badRequest().body(errors); 
+    }
+변환용 class를 생성해 bean 등록
+
+    @JsonComponent //Spring boot에서 제공
+    public class ErrorsSerializer extends JsonSerializer<Errors> {//JSON String으로 변환할 대상 지정
+        @Override
+        public void serialize(Errors errors, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            Logger logger = LoggerFactory.getLogger(getClass());
+            gen.writeStartArray(); // start generating error Array
+            errors.getFieldErrors().forEach(e->{
+                try{
+                    gen.writeStartObject(); //start generating Errors Object
+                    gen.writeStringField("field", e.getField());
+                    gen.writeStringField("objectName", e.getObjectName());
+                    gen.writeStringField("code", e.getCode());
+                    gen.writeStringField("defaultMessage", e.getDefaultMessage());
+                    Object rejectedValue = e.getRejectedValue();
+                    if (rejectedValue != null) {
+                        gen.writeStringField("rejectedValue", rejectedValue.toString());
+                    }
+                    gen.writeEndObject(); // finish generating Errors Object
+                }catch (IOException ie){
+                    logger.error(ie.getMessage());
+                }
+            });
+            errors.getGlobalErrors().forEach(error->{
+                ...
+            });
+            gen.writeEndArray(); // end generating error Array
+        }
+    }
+변환 처리 후 controller의 ....body(errors);처리
 
 # III. 비즈니스 로직 관련
 ## A. Event API 비즈니스 로직
@@ -261,3 +309,19 @@ c. Junit4인경우: 직접 test용 description 작성하기
     @TestDescription(value = "잘못된 값이 입력 됐을때 response code 체크")
     void createEvent_BadRequest_WrongData() throws Exception{
 Junit 5 사용을 권장.
+
+### 4. 전달된 json 값 확인하기
+error메세지 확인용 test : errors 객체에 배열로 들어있음 그중 첫 데이터만 확인
+
+    mockMvc.perform(post("/api/events")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaTypes.HAL_JSON)
+                    .content(objectMapper.writeValueAsString(eventDto))
+            )
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$[0].objectName").exists())
+            .andExpect(jsonPath("$[0].field").exists())
+            .andExpect(jsonPath("$[0].defaultMessage").exists())
+            .andExpect(jsonPath("$[0].code").exists())
+            .andExpect(jsonPath("$[0].rejectedValue").exists())
+            .andDo(print());
