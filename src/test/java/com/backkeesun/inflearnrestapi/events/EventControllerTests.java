@@ -125,7 +125,7 @@ class EventControllerTests {
                 .description("RestAPI Development with Spring")
                 .beginEnrollmentDateTime(LocalDateTime.of(2018,11,12,13,21))
                 .closeEnrollmentDateTime(LocalDateTime.of(2018,12,30,11,12))
-                //끝나는 날짜가 시작날짜보다 빠를때 테스트
+                //끝나는 날짜가 시작 날짜 보다 빠를때 테스트
                 .beginEventDateTime(LocalDateTime.of(2018, 11, 14,10,5))
                 .endEventDateTime(LocalDateTime.of(2018,11,1,23,1))
                 //base > max 테스트
