@@ -52,11 +52,10 @@ class EventControllerTests {
 //                .eventStatus(EventStatus.PUBLISHED)
                 .build();
         //when & then
-        mockMvc.perform(
-                    post("/api/events")//HTTPRequestServlet Method
-                        .contentType(MediaType.APPLICATION_JSON) // request 구체적 구현
-                        .accept(MediaTypes.HAL_JSON) // HAL JSON response 요구
-                        .content(objectMapper.writeValueAsString(event))// object를 JsonString으로 변환
+        mockMvc.perform(post("/api/events")//HTTPRequestServlet Method
+                            .contentType(MediaType.APPLICATION_JSON) // request 구체적 구현
+                            .accept(MediaTypes.HAL_JSON) // HAL JSON response 요구
+                            .content(objectMapper.writeValueAsString(event))// object를 JsonString으로 변환
                 )
                 .andDo(print())//결과 프린팅 내용을 아래에서 체크할 수 있다.
                 .andExpect(status().isCreated()) //isCreated: 201
@@ -91,15 +90,26 @@ class EventControllerTests {
                 .eventStatus(EventStatus.PUBLISHED)//불필요한 값이 있는 경우 테스트
                 .build();
         //when & then
-        mockMvc.perform(
-                        post("/api/events")//HTTPRequestServlet Method
-                                .contentType(MediaType.APPLICATION_JSON) // request 구체적 구현
-                                .accept(MediaTypes.HAL_JSON) // HAL JSON response 요구
-                                .content(objectMapper.writeValueAsString(event))// object를 JsonString으로 변환
+        mockMvc.perform(post("/api/events")//HTTPRequestServlet Method
+                            .contentType(MediaType.APPLICATION_JSON) // request 구체적 구현
+                            .accept(MediaTypes.HAL_JSON) // HAL JSON response 요구
+                            .content(objectMapper.writeValueAsString(event))// object를 JsonString으로 변환
                 )
                 .andDo(print())//결과 프린팅 내용을 아래에서 체크할 수 있다.
                 .andExpect(status().isBadRequest()) //isBadRequest : 400
         ;
-        /* TDD는 보통 데이터 3개 정도를 넣고 진행 */
     }
+    @Test
+    void createEvent_BadRequest_EmptyInput() throws Exception {
+        //given
+        EventDto eventDto = EventDto.builder().build();
+        //when then
+        this.mockMvc.perform(post("/api/events")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaTypes.HAL_JSON)
+                        .content(objectMapper.writeValueAsString(eventDto))
+                )
+                .andExpect(status().isBadRequest());
+    }
+
 }
