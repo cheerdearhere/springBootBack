@@ -49,6 +49,43 @@ equals와 hashcode 비교 메서드 처리시 입력한 값을 기준으로만 �
         return ResponseEntity.created(createdUri).body(event);//.build() 대신 body() 사용
 ## D. JPA로 repository 만들기: 인터페이스로 상속받아서 구현 처리
     public interface EventRepository extends JpaRepository<Event,Integer> 
+## E. entity validation 관리
+    - Jacksons library를 사용
+    - Entity에 validation 관련 어노테이션 사용(편리하지만 코드가 복잡해짐)
+    - 입력값을 받는 DTO를 따로 생성해서 관리(권장하지만 중복코드 발생)
+        dto를 따로 생성함으로써 받지 않을 데이터(id, free 등 연산으로 만들거나 내부에서 관리할 데이터)는 거를 수 있다.
+## F. DTO에서 Entity로 만드는 방법 : 
+### 1. 새로 빌드하기(생성하기) : 속도가 빠르고 안정성이 높음
+    Event unpersistEvent = Event.builder()
+            .name(eventDto.getName())
+            .description(eventDto.getDescription())
+            .location(eventDto.getLocation())
+            .beginEventDateTime(eventDto.getBeginEventDateTime())
+                ...
+            .build();
+### 2. 라이브러리 사용: ModelMapper / reflection 발생 가능성 있음
+dependency 주입
+
+    <!-- https://mvnrepository.com/artifact/org.modelmapper/modelmapper -->
+    <dependency>
+        <groupId>org.modelmapper</groupId>
+        <artifactId>modelmapper</artifactId>
+        <version>2.4.5</version>
+    </dependency>
+
+공용으로 사용하는 경우가 많으므로 bean 생성
+
+    @Bean
+    public ModelMapper modelMapper(){
+        return new ModelMapper();
+    }
+
+사용할 곳에서 injection 후 사용
+
+    private final ModelMapper modelMapper;
+        ...
+    Event event = modelMapper.map(eventDto,Event.class);
+
 
 # III. 비즈니스 로직 관련
 ## A. Event API 비즈니스 로직
@@ -129,5 +166,4 @@ equals와 hashcode 비교 메서드 처리시 입력한 값을 기준으로만 �
 ### 1. 가능한 정해진 variable을 사용한다
         .andExpect(header().exists(HttpHeaders.LOCATION)) //"location"보다는 HttpHeaders.Location
         .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))\
-### 2. TDD는 보통 데이터 3개 정도를 넣고 진행 
-        
+### 2. TDD는 보통 데이터 3개 정도를 넣고 진행
