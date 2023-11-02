@@ -25,16 +25,14 @@ public class EventController {
 
     private final EventRepository eventRepository;
     private final ModelMapper modelMapper;
+    private final EventValidation eventValidation;
 
     @PostMapping
     public ResponseEntity createEvent(@RequestBody @Valid EventDto eventDto, Errors errors){
-//        Event unpersistEvent = Event.builder()
-//                .name(eventDto.getName())
-//                .description(eventDto.getDescription())
-//                .location(eventDto.getLocation())
-//                .beginEventDateTime(eventDto.getBeginEventDateTime())
-//                    ...
-//                .build();
+        if(errors.hasErrors()){
+            return ResponseEntity.badRequest().build();
+        }
+        eventValidation.validate(eventDto,errors);
         if(errors.hasErrors()){
             return ResponseEntity.badRequest().build();
         }
