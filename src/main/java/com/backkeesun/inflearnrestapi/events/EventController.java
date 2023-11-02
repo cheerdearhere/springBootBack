@@ -6,9 +6,11 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.client.HttpClientErrorException;
 
 import javax.validation.Valid;
 import java.net.URI;
@@ -25,7 +27,7 @@ public class EventController {
     private final ModelMapper modelMapper;
 
     @PostMapping
-    public ResponseEntity createEvent(@RequestBody EventDto eventDto){
+    public ResponseEntity createEvent(@RequestBody @Valid EventDto eventDto, Errors errors){
 //        Event unpersistEvent = Event.builder()
 //                .name(eventDto.getName())
 //                .description(eventDto.getDescription())
@@ -33,6 +35,9 @@ public class EventController {
 //                .beginEventDateTime(eventDto.getBeginEventDateTime())
 //                    ...
 //                .build();
+        if(errors.hasErrors()){
+            return ResponseEntity.badRequest().build();
+        }
         Event event = modelMapper.map(eventDto,Event.class);
         Event newEvent = this.eventRepository.save(event);
         URI createdUri = linkTo(EventController.class).slash(newEvent.getId()).toUri();
