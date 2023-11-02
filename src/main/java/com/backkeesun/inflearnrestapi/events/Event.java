@@ -43,6 +43,6 @@ public class Event {
     private boolean free;
 
     @Enumerated(EnumType.STRING)
-    private EventStatus eventStatus;
+    private EventStatus eventStatus = EventStatus.DRAFT;//초기값 설정ㄷ
 
 }
