@@ -1,5 +1,6 @@
 package com.backkeesun.inflearnrestapi.events;
 
+import com.backkeesun.inflearnrestapi.common.TestDescription;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.DisplayName;
@@ -117,7 +118,7 @@ class EventControllerTests {
     }
 
     @Test
-    @DisplayName(value = "잘못된 값이 입력 됐을때 response code 체크")
+    @TestDescription(value = "잘못된 값이 입력 됐을때 response code 체크")
     void createEvent_BadRequest_WrongData() throws Exception{
         //given
         EventDto eventDto = EventDto.builder()
