@@ -326,3 +326,40 @@ error메세지 확인용 test : errors 객체에 배열로 들어있음 그중 �
             .andExpect(jsonPath("$[0].code").exists())
             .andExpect(jsonPath("$[0].rejectedValue").exists())
             .andDo(print());
+
+### 5. parameter 변경에 따른 테스트인 경우 중복이 많을 수 있다. 이때 쓰면 좋은 library
+junit4 : https://www.baeldung.com/junit-params
+junit5 : https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-params 
+
+주의!! junit 버전과 일치 확인
+
+    @ParameterizedTest
+    @MethodSource("testFree_useParams")
+    @DisplayName(value = "free: parameters 테스트")
+    void paramsForFree(int basePrice, int maxPrice, boolean isFree){
+        // given
+        Event event = Event.builder()
+                .basePrice(basePrice)
+                .maxPrice(maxPrice)
+                .build();
+
+        // when
+        event.update();
+
+        // then
+        assertThat(event.isFree()).isEqualTo(isFree);
+    }
+
+    private static Stream<Arguments> testFree_useParams(){
+        int free = 0;
+        int pay = 1000;
+        boolean isFree = true;
+        return Stream.of(
+                Arguments.of(free,free,isFree),
+                Arguments.of(pay,free,!isFree),
+                Arguments.of(free,pay,!isFree),
+                Arguments.of(pay,pay,!isFree)
+        );
+    }
+수행결과
+![img_1.png](img_1.png)
