@@ -2,8 +2,13 @@ package com.backkeesun.inflearnrestapi.events;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -110,5 +115,58 @@ class EventTest {
         event.update();
         //then
         assertThat(event.isOffline()).isTrue();
+    }
+
+
+    @ParameterizedTest
+    @MethodSource("testFree_useParams")
+    @DisplayName(value = "free: parameters 테스트")
+    void paramsForFree(int basePrice, int maxPrice, boolean isFree){
+        // given
+        Event event = Event.builder()
+                .basePrice(basePrice)
+                .maxPrice(maxPrice)
+                .build();
+
+        // when
+        event.update();
+
+        // then
+        assertThat(event.isFree()).isEqualTo(isFree);
+    }
+    @ParameterizedTest
+    @MethodSource("testOffline_useParams")
+    @DisplayName(value = "offline: parameters 테스트")
+    void paramsForOffline(String location, boolean isOffline){
+        //given
+        Event event = Event.builder()
+                .location(location)
+                .build();
+        //when
+        event.update();
+        //then
+        assertThat(event.isOffline()).isEqualTo(isOffline);
+    }
+
+    private static Stream<Arguments> testFree_useParams(){
+        int free = 0;
+        int pay = 1000;
+        boolean isFree = true;
+        return Stream.of(
+                Arguments.of(free,free,isFree),
+                Arguments.of(pay,free,!isFree),
+                Arguments.of(free,pay,!isFree),
+                Arguments.of(pay,pay,!isFree)
+        );
+    }
+    private static Stream<Arguments> testOffline_useParams(){
+        String useLocation = "비어 있지 않음";
+        String emptyLocation = "      ";
+        boolean isOffline = true;
+        return Stream.of(
+                Arguments.of(null,!isOffline),
+                Arguments.of(emptyLocation,!isOffline),
+                Arguments.of(useLocation,isOffline)
+        );
     }
 }
