@@ -1,6 +1,7 @@
 package com.backkeesun.inflearnrestapi.events;
 
 import lombok.*;
+import org.springframework.util.StringUtils;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -45,4 +46,13 @@ public class Event {
     @Enumerated(EnumType.STRING)
     private EventStatus eventStatus = EventStatus.DRAFT;//초기값 설정ㄷ
 
+    /**
+     * 데이터 변경에 따라 연산 데이터를 변경
+     */
+    public void update(){
+        // price update
+        this.free = this.basePrice == 0 && this.maxPrice == 0;
+        // location update
+        this.offline = !(this.location == null || this.location.isBlank());
+    }
 }
