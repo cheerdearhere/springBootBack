@@ -149,4 +149,36 @@ class EventControllerTests {
                 .andExpect(jsonPath("$[0].rejectedValue").exists())
         ;
     }
+
+    @Test
+    @DisplayName(value = "price가 입력되면 free가 false로")
+    void createEvent_putPrice() throws Exception{
+        //given
+        EventDto eventDto = EventDto.builder()
+                .name("event")
+                .description("no free")
+                .beginEnrollmentDateTime(LocalDateTime.of(2018,11,12,13,21))
+                .closeEnrollmentDateTime(LocalDateTime.of(2018,12,30,11,12))
+                .beginEventDateTime(LocalDateTime.of(2018, 11, 14,10,5))
+                .endEventDateTime(LocalDateTime.of(2019,12,1,23,1))
+                .basePrice(100)
+                .maxPrice(200)
+                .limitOfEnrollment(100)
+                .location("서울 강서구")
+                .build();
+        //when & then
+        mockMvc.perform(post("/api/events")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaTypes.HAL_JSON)
+                .content(objectMapper.writeValueAsString(eventDto))
+        )
+                .andExpect(status().isCreated())
+                .andExpect(header().exists(HttpHeaders.LOCATION))
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE,MediaTypes.HAL_JSON_VALUE))
+                .andExpect(jsonPath("id").exists())
+                .andExpect(jsonPath("free").value(false))
+                .andExpect(jsonPath("offline").value(true))
+                .andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT.name()))
+                .andDo(print());
+    }
 }
