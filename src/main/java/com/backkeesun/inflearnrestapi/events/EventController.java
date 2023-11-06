@@ -3,7 +3,9 @@ package com.backkeesun.inflearnrestapi.events;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.hateoas.Link;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
@@ -38,7 +40,14 @@ public class EventController {
         }
         Event event = modelMapper.map(eventDto,Event.class);
         Event newEvent = eventService.createEvent(event);
-        URI createdUri = linkTo(EventController.class).slash(newEvent.getId()).toUri();
-        return ResponseEntity.created(createdUri).body(event);//.build();
+//        ControllerLinkBuilder
+        WebMvcLinkBuilder selfLinkBuilder = linkTo(EventController.class).slash(newEvent.getId());
+        URI createdUri = selfLinkBuilder.toUri();
+        EventResource eventResource = new EventResource(event);
+        //new Link("url")도 가능:  add(new Link("http://localhost:8181/api/events/"+event.getId()));
+//        eventResource.add(linkTo(EventController.class).withRel("query-events"));
+//        eventResource.add(selfLinkBuilder.withSelfRel());
+//        eventResource.add(selfLinkBuilder.withRel("update-event"));//HttpMethod 차이일뿐 링크는 같을 수 있음
+        return ResponseEntity.created(createdUri).body(eventResource);//.build();
     }
 }
