@@ -181,4 +181,38 @@ class EventControllerTests {
                 .andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT.name()))
                 .andDo(print());
     }
+    @Test
+    @DisplayName(value = "HATEOAS : 정상 작동시 링크 생성 확인")
+    void createWithLink() throws Exception{
+        EventDto eventDto = inputDataObject();
+        mockMvc.perform(post("/api/events")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaTypes.HAL_JSON_VALUE)
+                        .content(objectMapper.writeValueAsString(eventDto))
+
+            )
+                .andExpect(status().isCreated())
+                .andExpect(header().exists(HttpHeaders.LOCATION))
+                .andExpect(header().string(HttpHeaders.CONTENT_TYPE,MediaTypes.HAL_JSON_VALUE))
+                .andExpect(jsonPath("id").exists())
+                .andExpect(jsonPath("_links.self").exists())
+//                .andExpect(jsonPath("_link.profile").exists()) 아직 작성 x
+                .andExpect(jsonPath("_links.query-events").exists())
+                .andExpect(jsonPath("_links.update-event").exists())
+                .andDo(print());
+    }
+
+    private static EventDto inputDataObject() {
+        return EventDto.builder()
+                .name("이름")
+                .description("설명 설명")
+                .beginEnrollmentDateTime(LocalDateTime.of(2018,11,12,13,21))
+                .closeEnrollmentDateTime(LocalDateTime.of(2018,12,30,11,12))
+                .beginEventDateTime(LocalDateTime.of(2018, 11, 14,10,5))
+                .endEventDateTime(LocalDateTime.of(2019,12,1,23,1))
+                .basePrice(100)
+                .maxPrice(200)
+                .location("서울시 어딘가")
+                .build();
+    }
 }
