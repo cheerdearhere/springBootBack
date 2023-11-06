@@ -422,7 +422,76 @@ test에서 체크한 정보를 모아서 snippets을 제공해 docs html을 만�
 prettyPrint() 결과
 ![img_4.png](img_4.png)
 
-이외에도 많은 프로세서가 있음
+이외에도 많은 프로세서가 있음: 필요에 따라 개인 공부
+
+### b. 링크, 필드, 헤더 문서화: API 문서 조각 만들기
+
+    @Test
+    @DisplayName(value = "spring rest docs 문서 조각(스니펫) 만들기")
+    void restDocsField() throws Exception{ ...
+
+- 요청 본문 문서화(기본) - 위의 내용 참조
+- 응답 본문 문서화(기본) - 위의 내용 참조
+
+    
+    ...
+    .andDo(document("create_event");
+- 링크 문서화
+    * self, query, update
+    * profile 링크(문서 완성 후 진행 예정)
+
+
+        ...
+            .andDo(document("create_event",
+                    links(
+                            linkWithRel("self").description("Link to self"),
+                            linkWithRel("query-events").description("Link to query events"),
+                            linkWithRel("update-event").description("Link to update an existing event")
+        ...
+결과: 
+![img_5.png](img_5.png)
+
+- 요청 헤더 문서화
+
+
+    requestHeaders(
+        headerWithName(HttpHeaders.ACCEPT).description("header: accept 설정"),
+        headerWithName(HttpHeaders.CONTENT_TYPE).description("header: contentType 설정"),
+    )
+- 요청 필드 문서화
+
+
+    requestFields(
+          fieldWithPath("name").description("event name"),
+          fieldWithPath("description").description("information of new event"),
+- 응답 헤더 문서화
+
+
+    responseHeaders(
+            headerWithName(HttpHeaders.LOCATION).description("address of event"),
+            headerWithName(HttpHeaders.CONTENT_TYPE).description("contentType"+MediaTypes.HAL_JSON_VALUE)
+    )
+- 응답 필드 문서화
+
+
+    responseFields(
+            fieldWithPath("id").description("event id"),
+            fieldWithPath("name").description("event name"),
+            ...
+
+링크를 따로 문서화하는 경우 response에서 검증하지 않았다고 에러가 난다.
+
+      방법1: relexedResponseFields() 사용 
+      방법2: fieldsWithPath("해당").ignored() 사용
+      방법3: 뒤에 .optional() 삽입 
+        fieldWithPath("_links.self.href").description("my href").optional()
+
+rest docs 문서에 반환될 값들의 타입을 강하게 테스트 하고 싶은 경우:  
+
+    fieldWithPath("_links.self.href").type(JsonFieldType.STRING).description("my href"),
+
+![img_6.png](img_6.png)
+
 
 ## E. TDD 진행시 주의사항
 ### 1. 가능한 정해진 variable을 사용한다
