@@ -340,7 +340,91 @@ RepresentationModel와 달리 EntityModel은 별도로 JsonUnWrappted annotation
         }
     }
 
-## D. TDD 진행시 주의사항
+## D. Spring REST DOCS
+### 1. REST DOCS 소개 
+RESTful API의 문서를 제작하는데 도움을 주는 tool
+test에서 체크한 정보를 모아서 snippets을 제공해 docs html을 만들 수 있음
+
+자주 사용하는 문서 관련 tools
+
+    Swagger는 코드 자체에서 문서화
+    Rest docs는 테스트에서 문서화
+    Postman은 API의 연결정보 확인에 유용
+
+최소 사용 환경:
+
+    java 8
+    Spring Framework 5.0.2 
+
+아래의 tool을 사용 :
+
+    MockMVC
+    WebTestClient
+    REST Assured
+    Slate
+    TestNG
+    JUnit5
+
+방법:
+
+    - 일반 Spring: mockMvc 객체 생성시 .apply(documentationConfiguration(this.restDocumentation))을 넣고 build()
+    - SpringBoot: @AutoConfigureRestDocs를 테스트 class 위에 적용
+    @AutoConfigureRestDocs // REST Docs용
+    class EventControllerTests {
+
+    - 해당 테스트에 andDo()로 스니펫 작성
+                .andDo(document("create_event")) ... 
+
+결과 : ASCII Docs으로 이뤄진 html 문서
+![img_3.png](img_3.png)
+
+### 2. 구체적 사용
+#### a. REST DOCS form 설정하기: RestDocsConfigure class test 폴더에..
+설정 class
+
+    import org.springframework.boot.test.autoconfigure.restdocs.RestDocsMockMvcConfigurationCustomizer;
+    import org.springframework.boot.test.context.TestConfiguration;
+    import org.springframework.context.annotation.Bean;
+    import org.springframework.restdocs.mockmvc.MockMvcRestDocumentationConfigurer;
+    
+    @TestConfiguration // test 관련 설정임을 알림
+    public class RestDocsConfiguration {
+        @Bean
+        public RestDocsMockMvcConfigurationCustomizer restDocsMockMvcConfigurationCustomizer(){
+            return new RestDocsMockMvcConfigurationCustomizer() {
+                @Override
+                public void customize(MockMvcRestDocumentationConfigurer configurer) {
+                    //여기까지는 자동생성. configurer를 정의
+                    configurer.operationPreprocessors() // 처리과정 정의
+                        .withResponseDefaults(prettyPrint()) //response 결과를 보기 좋게
+                        .withRequestDefaults(prettyPrint()); //request 표시를 보기 좋게
+                }
+            };
+        }
+    }
+
+간단하게 람다식으로 표현(처음부터 그러면 좋겠지만.....)
+
+    @TestConfiguration // test 관련 설정임을 알림
+    public class RestDocsConfiguration {
+        @Bean
+        public RestDocsMockMvcConfigurationCustomizer restDocsMockMvcConfigurationCustomizer(){
+            return configurer -> configurer.operationPreprocessors() 
+                    .withResponseDefaults(prettyPrint()) 
+                    .withRequestDefaults(prettyPrint());
+        }
+    }
+
+해당 test class에 import
+    
+    @Import(RestDocsConfiguration.class)
+
+prettyPrint() 결과
+![img_4.png](img_4.png)
+
+이외에도 많은 프로세서가 있음
+
+## E. TDD 진행시 주의사항
 ### 1. 가능한 정해진 variable을 사용한다
         .andExpect(header().exists(HttpHeaders.LOCATION)) //"location"보다는 HttpHeaders.Location
         .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))\
