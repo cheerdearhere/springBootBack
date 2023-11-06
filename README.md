@@ -519,6 +519,12 @@ target 폴더에서 생성된 내용확인
 
     각 snippets과 통합 index.html 확인 가능(빌드된 파일 path)
 
+#### d. 문서 완성 후 프로필 추가하기
+resource 처리하는 곳에서 추가
+
+테스트 코드에 추가
+
+테스트 코드의 document 처리부분에 추가
 ## E. TDD 진행시 주의사항
 ### 1. 가능한 정해진 variable을 사용한다
         .andExpect(header().exists(HttpHeaders.LOCATION)) //"location"보다는 HttpHeaders.Location
