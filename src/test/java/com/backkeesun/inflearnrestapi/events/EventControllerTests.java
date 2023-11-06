@@ -229,7 +229,7 @@ class EventControllerTests {
                 .andExpect(jsonPath("_links.self").exists())
                 .andExpect(jsonPath("_links.query-events").exists())
                 .andExpect(jsonPath("_links.update-event").exists())
-                .andDo(document("create_event"))
+//                .andDo(document("create_event"))
                 ;
     }
 
@@ -265,7 +265,7 @@ class EventControllerTests {
                 .andExpect(jsonPath("_links.query-events").exists())
                 .andExpect(jsonPath("_links.update-event").exists())
                 //이곳에서 작성
-                .andDo(document("create_event",
+                .andDo(document("create-event",
                         links(
                                 linkWithRel("self").description("Link to self"),
                                 linkWithRel("query-events").description("Link to query events"),
