@@ -207,7 +207,6 @@ class EventControllerTests {
                 .andExpect(header().string(HttpHeaders.CONTENT_TYPE,MediaTypes.HAL_JSON_VALUE))
                 .andExpect(jsonPath("id").exists())
                 .andExpect(jsonPath("_links.self").exists())
-//                .andExpect(jsonPath("_link.profile").exists()) 아직 작성 x
                 .andExpect(jsonPath("_links.query-events").exists())
                 .andExpect(jsonPath("_links.update-event").exists())
                 .andDo(print());
@@ -260,17 +259,18 @@ class EventControllerTests {
                 .andExpect(header().exists(HttpHeaders.LOCATION))
                 .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_VALUE))
                 .andExpect(jsonPath("id").exists())
-                .andExpect(jsonPath("_links.self").exists())
-//                .andExpect(jsonPath("_link.profile").exists()) 아직 작성 x
-                .andExpect(jsonPath("_links.query-events").exists())
-                .andExpect(jsonPath("_links.update-event").exists())
+                //document에서 체크하는 경우, 특히 링크는 두 번 체크하므로 굳이 체크할 필요 없음.
+//                .andExpect(jsonPath("_links.self").exists())
+//                .andExpect(jsonPath("_link.profile").exists()) //html 문서 확인 후 작성
+//                .andExpect(jsonPath("_links.query-events").exists())
+//                .andExpect(jsonPath("_links.update-event").exists())
                 //이곳에서 작성
                 .andDo(document("create-event",
                         links(
                                 linkWithRel("self").description("Link to self"),
                                 linkWithRel("query-events").description("Link to query events"),
-                                linkWithRel("update-event").description("Link to update an existing event")
-//                              ,  linkWithRel("profile").description("Link to profile page")
+                                linkWithRel("update-event").description("Link to update an existing event"),
+                                linkWithRel("profile").description("Link to profile page")
                         ),
                         requestHeaders(
                                 headerWithName(HttpHeaders.ACCEPT).description("header:"+MediaTypes.HAL_JSON_VALUE),
@@ -311,7 +311,8 @@ class EventControllerTests {
                                 //optional fields
                                 fieldWithPath("_links.self.href").type(JsonFieldType.STRING).description("my href").optional(),
                                 fieldWithPath("_links.query-events.href").type(JsonFieldType.STRING).description("my href").optional(),
-                                fieldWithPath("_links.update-event.href").type(JsonFieldType.STRING).description("my href").optional()
+                                fieldWithPath("_links.update-event.href").type(JsonFieldType.STRING).description("my href").optional(),
+                                fieldWithPath("_links.profile.href").description("this profile").optional()
                         )
 
                 ));
