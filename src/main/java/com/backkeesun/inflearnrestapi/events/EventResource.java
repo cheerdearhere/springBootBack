@@ -13,11 +13,12 @@ public class EventResource extends EntityModel<Event> {
     public EventResource(Event event, Link... links){
         super(event, Arrays.asList(links));
         WebMvcLinkBuilder resourceBuilder = linkTo(EventController.class).slash(event.getId());
-        //new Link("url")도 가능:         add(new Link("http://localhost:8181/api/events/"+event.getId()));
+        //new Link("url")도 가능:         add(Link.of("http://localhost:8181/api/events/"+event.getId()));
         //데이터가 변경되면 하나하나 직접 변경해야흐므로 아래를 권장
         add(resourceBuilder.withSelfRel());
         add(resourceBuilder.withRel("query-events"));
         add(resourceBuilder.withRel("update-event"));
+        add(Link.of("/docs/index.html#resources-events-create").withRel("profile"));
     }
 }
 /**
