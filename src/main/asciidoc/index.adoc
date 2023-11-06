@@ -1,5 +1,5 @@
-= Natural REST API Guide
-조익;
+= test REST API Guide
+dreamIk Heimer (dream-ik89@naver.com);
 :doctype: book
 :icons: font
 :source-highlighter: highlightjs
