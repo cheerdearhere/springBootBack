@@ -78,6 +78,7 @@
         <plugins>
             <plugin>
                 <groupId>org.asciidoctor</groupId>
+<!--        page 생성 플러그인        -->
                 <artifactId>asciidoctor-maven-plugin</artifactId>
                 <version>2.2.1</version>
                 <executions>
@@ -85,6 +86,7 @@
                         <id>generate-docs</id>
                         <phase>prepare-package</phase>
                         <goals>
+<!--            모든 asciidoc문서를 html로 변환                -->
                             <goal>process-asciidoc</goal>
                         </goals>
                         <configuration>
@@ -100,6 +102,34 @@
                         <version>${spring-restdocs.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+<!--        asciidocs > html로 처리한 내용을 copy해서 해당 위치로 전송        -->
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.7</version>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>
+<!--                to                -->
+                                ${project.build.outputDirectory}/static/docs
+                            </outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>
+<!--                from                        -->
+                                        ${project.build.directory}/generated-docs
+                                    </directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
