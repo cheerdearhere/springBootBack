@@ -424,7 +424,7 @@ prettyPrint() 결과
 
 이외에도 많은 프로세서가 있음: 필요에 따라 개인 공부
 
-### b. 링크, 필드, 헤더 문서화: API 문서 조각 만들기
+#### b. 링크, 필드, 헤더 문서화: API 문서 조각 만들기
 
     @Test
     @DisplayName(value = "spring rest docs 문서 조각(스니펫) 만들기")
@@ -492,6 +492,31 @@ rest docs 문서에 반환될 값들의 타입을 강하게 테스트 하고 싶
 
 ![img_6.png](img_6.png)
 
+#### c. 만들어진 문서조각으로 문서(html) 빌드하기
+pom.xml에 관련 플러그인 추가(사이트 참조): https://docs.spring.io/spring-restdocs/docs/2.0.2.RELEASE/reference/html5/
+
+    <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.7</version>
+        <executions>
+          ...
+        </executions>
+    </plugin>
+
+문서를 보관할 directory 생성
+
+    src/main/asciidoc/index.adoc
+
+    https://gitlab.com/whiteship/natural 에서 같은 path에 있는 파일을 open raw
+    그 내용 복붙후 수정
+
+테스트 중 에러가 있는 경우 빌드가 진행되지 않으므로 예전 테스트중 에러가 발생하는 테스트의 경우 삭제
+
+    maven package 또는 intellij의 Maven 메뉴 > lifecycle > pacakge 실행
+
+target 폴더에서 생성된 내용확인
+
+    각 snippets과 통합 index.html 확인 가능(빌드된 파일 path)
 
 ## E. TDD 진행시 주의사항
 ### 1. 가능한 정해진 variable을 사용한다
