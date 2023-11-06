@@ -234,11 +234,14 @@ JSON으로 변환시킬때 ObjectMapper의 beanSerializer()를 쓰는데 이때 
         ...
 
 # IV. 기타
-## A. Postgresql 설치
+## A. DB 관련
+### 1. Postgresql Database 설치
     ver 13 사용.
     CREATE USER {ID} PASSWORD '{PASSWORD}' + 권한(테스트는 SUPERUSER);
     CREATE DATABASE {DATABASE_TITLE} OWNER {OWNER_ID};
-
+### 2. test database 분리하기
+    - test db: h2
+    - app db : postgreSql
 ## B. 웹 계층 테스트
 단위테스트만큼 가볍지는 않지만 웹 계층의 이벤트와 request, response 등을 처리함. 서버는 띄우지 않지만 dispatcherServlet까지는 띄움
 
@@ -586,6 +589,7 @@ error메세지 확인용 test : errors 객체에 배열로 들어있음 그중 �
 
 ### 5. parameter 변경에 따른 테스트인 경우 중복이 많을 수 있다. 이때 쓰면 좋은 library
 junit4 : https://www.baeldung.com/junit-params
+
 junit5 : https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-params 
 
 주의!! junit 버전과 일치 확인
