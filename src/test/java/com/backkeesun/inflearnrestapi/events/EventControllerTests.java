@@ -1,5 +1,6 @@
 package com.backkeesun.inflearnrestapi.events;
 
+import com.backkeesun.inflearnrestapi.common.RestDocsConfiguration;
 import com.backkeesun.inflearnrestapi.common.TestDescription;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
@@ -12,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -31,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc // spring내에서 mock사용
 @AutoConfigureRestDocs // REST Docs용
+@Import(RestDocsConfiguration.class)
 class EventControllerTests {
     @Autowired
     MockMvc mockMvc; //AutoConfigureMockMvc로 사용 가능
