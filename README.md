@@ -1,7 +1,7 @@
 # springBootBack
 from inflearn(https://www.inflearn.com/course/spring_rest-api)
 ### using Dependencies
-java 11, spring boot 2.x.x(maven), postgresql, h2(test), JPA, Lombok, restdocs
+java 11, spring boot 2.x.x(maven), postgresql(with docker), h2(test), JPA, Lombok, restdocs
 
 # I. 강의 개요
 2017년 네이버의 Deview 컨퍼런스에서 이응준님의 발표에서 영감을 받음. 현재 REST API라 불리고 쓰이는 것들이 과연 RestFUL한가에 대한 의문. 진짜 REST API 만들기
@@ -379,8 +379,8 @@ RepresentationModel(구 ResourceSupport) 사용: Entity를 eventResource로 만�
         public EventResource (Event event){
             this.event = event;
             eventResource.add(linkTo(EventController.class).withRel("query-events"));
-            eventResource.add&#40;selfLinkBuilder.withSelfRel&#40;&#41;&#41;;)
-            eventResource.add&#40;selfLinkBuilder.withRel&#40;"update-event"&#41;&#41;;//HttpMethod 차이일뿐 링크는 같을 수 있음)
+            eventResource.add(selfLinkBuilder.withSelfRel());)
+            eventResource.add(selfLinkBuilder.withRel("update-event"));//HttpMethod 차이일뿐 링크는 같을 수 있음)
         }
         public Event getEvent() {
             return event;
@@ -398,8 +398,8 @@ controller에서 사용
   //new Link("url")도 가능:         add(new Link("http://localhost:8181/api/events/"+event.getId()));
   //데이터가 변경되면 하나하나 직접 변경해야흐므로 아래를 권장
   eventResource.add(linkTo(EventController.class).withRel("query-events"));
-  eventResource.add&#40;selfLinkBuilder.withSelfRel&#40;&#41;&#41;;)
-  eventResource.add&#40;selfLinkBuilder.withRel&#40;"update-event"&#41;&#41;;//HttpMethod 차이일뿐 링크는 같을 수 있음)
+  eventResource.add(selfLinkBuilder.withSelfRel());)
+  eventResource.add(selfLinkBuilder.withRel("update-event"));//HttpMethod 차이일뿐 링크는 같을 수 있음)
   return ResponseEntity.created(createdUri).body(eventResource);
 ```
 #### b. 방법 2 : EntityModel(구 Resource) 사용하기
