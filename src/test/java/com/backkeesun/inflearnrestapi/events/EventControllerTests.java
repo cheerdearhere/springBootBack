@@ -154,12 +154,13 @@ class EventControllerTests {
                         .content(objectMapper.writeValueAsString(eventDto))
                 )
                 .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("errors[0].field").exists())
+                .andExpect(jsonPath("errors[0].objectName").exists())
+                .andExpect(jsonPath("errors[0].code").exists())
+                .andExpect(jsonPath("errors[0].defaultMessage").exists())
+                .andExpect(jsonPath("errors[0].rejectedValue").exists())
+                .andExpect(jsonPath("_links.index").exists()) //error때 이동할 api index
                 .andDo(print())
-                .andExpect(jsonPath("$[0].field").exists())
-                .andExpect(jsonPath("$[0].objectName").exists())
-                .andExpect(jsonPath("$[0].code").exists())
-                .andExpect(jsonPath("$[0].defaultMessage").exists())
-                .andExpect(jsonPath("$[0].rejectedValue").exists())
         ;
     }
 
