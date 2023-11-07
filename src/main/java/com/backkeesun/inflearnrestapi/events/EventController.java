@@ -4,12 +4,18 @@ import com.backkeesun.inflearnrestapi.common.ErrorResource;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,6 +36,15 @@ public class EventController {
     private final ModelMapper modelMapper;
     private final EventValidator eventValidator;
 
+
+    @GetMapping
+    //Pageable로 paging에 필요한 parameter를 받음(Spring data JPA가 제공)
+    public ResponseEntity queryEvents(Pageable pageable, PagedResourcesAssembler<Event> pagedResourcesAssembler){
+        Page<Event> page = this.eventService.queryEvents(pageable);
+        PagedModel<EntityModel<Event>> pageEntityModel = pagedResourcesAssembler.toModel(page, EventResource::new);
+        pageEntityModel.add(Link.of("/docs/index.html#resources-query-events").withRel("profile"));
+        return ResponseEntity.ok(pageEntityModel);
+    }
     @PostMapping
     public ResponseEntity createEvent(@RequestBody @Valid EventDto eventDto, Errors errors){
         if(errors.hasErrors()){
