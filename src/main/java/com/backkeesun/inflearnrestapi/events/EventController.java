@@ -1,5 +1,6 @@
 package com.backkeesun.inflearnrestapi.events;
 
+import com.backkeesun.inflearnrestapi.common.ErrorResource;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Required;
@@ -32,11 +33,11 @@ public class EventController {
     @PostMapping
     public ResponseEntity createEvent(@RequestBody @Valid EventDto eventDto, Errors errors){
         if(errors.hasErrors()){
-            return ResponseEntity.badRequest().body(errors);
+            return badRequest(errors);
         }
         eventValidator.validate(eventDto,errors);
         if(errors.hasErrors()){
-            return ResponseEntity.badRequest().body(errors);
+            return badRequest(errors);
         }
         Event event = modelMapper.map(eventDto,Event.class);
         Event newEvent = eventService.createEvent(event);
@@ -49,5 +50,9 @@ public class EventController {
 //        eventResource.add(selfLinkBuilder.withSelfRel());
 //        eventResource.add(selfLinkBuilder.withRel("update-event"));//HttpMethod 차이일뿐 링크는 같을 수 있음
         return ResponseEntity.created(createdUri).body(eventResource);//.build();
+    }
+
+    private static ResponseEntity<ErrorResource> badRequest(Errors errors) {
+        return ResponseEntity.badRequest().body(new ErrorResource(errors));
     }
 }

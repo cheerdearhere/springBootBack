@@ -15,6 +15,7 @@ public class ErrorsSerializer extends JsonSerializer<Errors> {//JSON String으�
     @Override
     public void serialize(Errors errors, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         Logger logger = LoggerFactory.getLogger(getClass());
+        gen.writeFieldName("errors");//spring boot 2.3부터 Jackson library가 더이상 Array부터 만드는 것을 금지함
         gen.writeStartArray(); // start generating error Array
         errors.getFieldErrors().forEach(e->{
             try{
