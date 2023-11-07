@@ -22,6 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.stream.IntStream;
 
 import static org.springframework.restdocs.headers.HeaderDocumentation.*;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
@@ -29,6 +30,7 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -42,6 +44,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(RestDocsConfiguration.class)
 @ActiveProfiles("test")//application-test.yml override
 class EventControllerTests {
+    @Autowired
+    EventRepository eventRepository;
     @Autowired
     MockMvc mockMvc; //AutoConfigureMockMvc로 사용 가능
     @Autowired
@@ -160,8 +164,7 @@ class EventControllerTests {
                 .andExpect(jsonPath("errors[0].defaultMessage").exists())
                 .andExpect(jsonPath("errors[0].rejectedValue").exists())
                 .andExpect(jsonPath("_links.index").exists()) //error때 이동할 api index
-                .andDo(print())
-        ;
+                .andDo(print());
     }
 
     @Test
@@ -317,7 +320,6 @@ class EventControllerTests {
                                 fieldWithPath("_links.update-event.href").type(JsonFieldType.STRING).description("my href").optional(),
                                 fieldWithPath("_links.profile.href").description("this profile").optional()
                         )
-
                 ));
     }
 
@@ -333,5 +335,82 @@ class EventControllerTests {
                 .maxPrice(200)
                 .location("서울시 어딘가")
                 .build();
+    }
+
+    @Test
+    @DisplayName(value="30개의 이벤트를 10개씩 조회 - 2page")
+    void queryEvents() throws Exception{
+        //given
+        IntStream.range(0,30).forEach(this::generateEvent);
+/**
+*         IntStream.range(0,30).forEach(i->{
+*             this.generateEvent(i);
+*         });
+*/
+        //when & then
+        this.mockMvc.perform(get("/api/events")
+                        .param("page","1")//paging data
+                        .param("size","10")
+                        .param("sort","name,DESC")
+                )
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("page").exists()) //paging data
+                .andExpect(jsonPath("_links.first").exists()) //paging link
+                .andExpect(jsonPath("_links.prev").exists())
+                .andExpect(jsonPath("_links.self").exists())
+                .andExpect(jsonPath("_links.next").exists())
+                .andExpect(jsonPath("_links.last").exists())
+                .andExpect(jsonPath("_links.profile").exists())
+                .andExpect(jsonPath("_embedded.eventList[0]._links.query-events").exists())//개별 link
+                .andExpect(jsonPath("_embedded.eventList[0]._links.update-event").exists())
+                .andExpect(jsonPath("_embedded.eventList[0]._links.profile").exists())
+                .andDo(document("query-events",
+                        links(
+                                linkWithRel("first").description("Link to first page"),
+                                linkWithRel("prev").description("Link to previous page"),
+                                linkWithRel("self").description("Link to self"),
+                                linkWithRel("next").description("Link to next page"),
+                                linkWithRel("last").description("Link to last page"),
+                                linkWithRel("profile").description("Link to profile page")
+                        ),
+                        responseHeaders(
+                                headerWithName(HttpHeaders.CONTENT_TYPE).description("contentType"+MediaTypes.HAL_JSON_VALUE)
+                        ),
+                        responseFields(
+                                subsectionWithPath("_embedded").description("An array of events"),//여러 요소를 포함한 객체인 경우
+                                subsectionWithPath("_embedded.eventList").ignored(),//array 등 을 대상으로 하위 요소를 무시할 경우
+                                //page data
+                                fieldWithPath("page.size").description("page size is 10 rows"),
+                                fieldWithPath("page.totalElements").description("total number"),
+                                fieldWithPath("page.totalPages").description("total pages"),
+                                fieldWithPath("page.number").description("index of page"),
+                                //link data
+                                fieldWithPath("_links.first.href").description("Link to first page").optional(),
+                                fieldWithPath("_links.prev.href").description("Link to previous page").optional(),
+                                fieldWithPath("_links.self.href").description("Link to self").optional(),
+                                fieldWithPath("_links.next.href").description("Link to next page").optional(),
+                                fieldWithPath("_links.last.href").description("Link to last page").optional(),
+                                fieldWithPath("_links.profile.href").description("Link to profile page").optional()
+                        )
+                ));
+    }
+
+    private void generateEvent(int i) {
+        int basePrice = i%3 == 0 ? 0 :100;
+        int maxPrice = i%3 == 1 ? 0 : 200;
+        String location = i%2 == 0 ? "" : "서울시 어딘가" ;
+        Event event = Event.builder()
+                .name("event"+i)
+                .description("test event")
+                .beginEnrollmentDateTime(LocalDateTime.of(2018,11,12,13,21))
+                .closeEnrollmentDateTime(LocalDateTime.of(2018,12,30,11,12))
+                .beginEventDateTime(LocalDateTime.of(2018, 11, 14,10,5))
+                .endEventDateTime(LocalDateTime.of(2019,12,1,23,1))
+                .basePrice(basePrice)
+                .maxPrice(maxPrice)
+                .location(location)
+                .build();
+        this.eventRepository.save(event);
     }
 }
