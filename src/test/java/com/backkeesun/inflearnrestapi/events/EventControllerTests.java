@@ -18,6 +18,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -39,6 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc // spring내에서 mock사용
 @AutoConfigureRestDocs // REST Docs용
 @Import(RestDocsConfiguration.class)
+@ActiveProfiles("test")//application-test.yml override
 class EventControllerTests {
     @Autowired
     MockMvc mockMvc; //AutoConfigureMockMvc로 사용 가능

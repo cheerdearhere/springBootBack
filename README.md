@@ -240,8 +240,9 @@ JSON으로 변환시킬때 ObjectMapper의 beanSerializer()를 쓰는데 이때 
     CREATE USER {ID} PASSWORD '{PASSWORD}' + 권한(테스트는 SUPERUSER);
     CREATE DATABASE {DATABASE_TITLE} OWNER {OWNER_ID};
 ### 2. test database 분리하기
-    - test db: h2
-    - app db : postgreSql
+    docker를 사용해 컨테이너 실행 : 
+[dockerScript.md](./dockerScript.md)  참고
+
 ## B. 웹 계층 테스트
 단위테스트만큼 가볍지는 않지만 웹 계층의 이벤트와 request, response 등을 처리함. 서버는 띄우지 않지만 dispatcherServlet까지는 띄움
 
