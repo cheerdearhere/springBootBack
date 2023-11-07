@@ -1,36 +1,37 @@
-
 server:
   port: 8181
-#
 
 spring:
   jackson:
     deserialization:
       fail-on-unknown-properties: true # mapping 과정에서 불필요가 있는경우 fail 처리
-#  # Database
-#  #postgre
-#  datasource:
-#    url: jdbc:postgresql://localhost:5432/jpa
-#    username: jpa
-#    password: jpa
-#  #    H2 test?? ?? ?? x
-##  datasource:
-##    url:
-##    username: sa
-##    password:
-##    driver-class-name: org.h2.Driver
+# Database
+  #postgre
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: pass
+    driver-class-name: org.postgresql.Driver
   jpa:
-#    properties:
-#      hibernate:
-#        ddl-auto: create-drop
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true # 쿼리 포멧
+        jdbc:
+          lob:
+            non_contextual_creation: true
 #        temp:
 #          use_jdbc_metadata_defaults: false
-#        format_sql: true
 #    database-platform: org.hibernate.dialect.PostgreSQL9Dialect
     show-sql: true
 
+#logging
 logging:
   level:
     org.hibernate:
-      sql: debug
-      type: trace
+      sql: debug # 쿼리문
+      type:
+        descriptor:
+          sql:
+            BasicBinder: trace # 입력된 값
