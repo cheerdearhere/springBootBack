@@ -560,7 +560,54 @@ junit5 일때 [여기](https://mvnrepository.com/artifact/org.junit.jupiter/juni
     }
 ```
 ## F. TEST code refactoring tips
+### 1. 테스트 클래스들의 중복 어노테이션 줄이기: 상속
+아래와 같이 유사한 테스트들마다 어노테이션이 반복된다.
+```java
+@SpringBootTest
+@AutoConfigureMockMvc 
+@AutoConfigureRestDocs 
+@Import(RestDocsConfiguration.class)
+@ActiveProfiles("test")
+```
+이를 위해 유사한 테스트에서는 반복코드를 최소화 하도록 상속으로 이어준다. 
+#### a. test폴더의 common package에 해당 유형의 class 생성
+#### b. 기존 테스트의 annotation 가져와서 붙여넣기
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+@AutoConfigureRestDocs
+@Import(RestDocsConfiguration.class)
+@ActiveProfiles("test")
+//@Ignore Junit4에서
+@Disabled //Junit5
+public class WebMockControllerTest {
 
+}
+
+```
+#### c. 유사 테스트에서 사용될 의존성들을 미리 주입
+```java
+...
+public class WebMockControllerTest {
+    @Autowired
+    protected MockMvc mockMvc;
+    @Autowired
+    protected ModelMapper modelMapper;
+    @Autowired
+    protected ObjectMapper objectMapper;
+}
+
+```
+#### d. 준비된 데이터들을 기존 test class에서 지우고 상속
+```java
+class EventControllerTests extends WebMockControllerTest {
+    @Autowired //이테스트에서만 쓰는 경우는 남김
+    EventRepository eventRepository;
+    @Test
+    @DisplayName(value = "정상 처리된 경우 확인")
+    void createEvent() throws Exception { 
+        ...
+```
 # V. 유용한 라이브러리
 ## A. Spring HATEOAS library
 스프링에서 RestFul Api을 더 잘 구성하도록 돕는 라이브러리.
