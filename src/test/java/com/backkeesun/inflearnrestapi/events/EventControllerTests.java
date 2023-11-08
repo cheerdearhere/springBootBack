@@ -1,6 +1,7 @@
 package com.backkeesun.inflearnrestapi.events;
 
 import com.backkeesun.inflearnrestapi.common.RestDocsConfiguration;
+import com.backkeesun.inflearnrestapi.common.WebMockControllerTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.DisplayName;
@@ -34,18 +35,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Slicing test로는 제대로 영속성 처리를 체크할 수 없으므로 test를 더 진행할 수 없다
  * WebMvc 계층 테스트를 spring test로 변경
  */
-@SpringBootTest
-@AutoConfigureMockMvc // spring내에서 mock사용
-@AutoConfigureRestDocs // REST Docs용
-@Import(RestDocsConfiguration.class)
-@ActiveProfiles("test")//application-test.yml override
-class EventControllerTests {
+//@SpringBootTest
+//@AutoConfigureMockMvc // spring내에서 mock사용
+//@AutoConfigureRestDocs // REST Docs용
+//@Import(RestDocsConfiguration.class)
+//@ActiveProfiles("test")//application-test.yml override
+class EventControllerTests extends WebMockControllerTest {
     @Autowired
     EventRepository eventRepository;
-    @Autowired
-    MockMvc mockMvc; //AutoConfigureMockMvc로 사용 가능
-    @Autowired
-    ObjectMapper objectMapper;// json으로 변환
+//    @Autowired
+//    MockMvc mockMvc; //AutoConfigureMockMvc로 사용 가능
+//    @Autowired
+//    ObjectMapper objectMapper;// json으로 변환
     //repository도 포함되므로 Mockito는 필요 x
     @Test
     @DisplayName(value = "정상 처리된 경우 확인")
