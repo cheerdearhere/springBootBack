@@ -320,7 +320,14 @@ notFound의 경우 body를 처리할 method가 없어 생성자를 작성해 bod
         publish
             ...
 ```
-
+## B. 계정 관리
+### 1. account data
+```markdown
+- id
+- email
+- password
+- roles: ADMIN or USER
+```
 # IV. 테스트 관련
 ## A. TDD 방식
 ### 1. 요구사항 확인 및 구조 분석
