@@ -50,9 +50,6 @@ dreamIk Heimer (dream-ik89@naver.com);
 | `201 Created`
 | 새 리소스를 성공적으로 생성함. 응답의 `Location` 헤더에 해당 리소스의 URI가 담겨있다.
 
-| `204 No Content`
-| 기존 리소스를 성공적으로 수정함.
-
 | `400 Bad Request`
 | 잘못된 요청을 보낸 경우. 응답 본문에 더 오류에 대한 정보가 담겨있다.
 
@@ -92,7 +89,7 @@ include::{snippets}/errors/http-response.adoc[]
 
 `GET` 요청을 사용하여 인덱스에 접근할 수 있다.
 
-operation::index[snippets='response-body,http-response,links']
+// operation::index[snippets='response-body,http-response,links']
 
 [[resources-events]]
 == 이벤트
@@ -117,12 +114,17 @@ operation::create-event[snippets='request-fields,curl-request,http-request,reque
 === 이벤트 조회
 
 `Get` 요청을 사용해서 기존 이벤트 하나를 조회할 수 있다.
-
-operation::get-event[snippets='request-fields,curl-request,http-response,links']
+!===
+|PathValiable|Type|Description
+|`+id+`
+|`+Number+`
+|event id
+!===
+operation::get-event[snippets='curl-request,http-request,http-response,links']
 
 [[resources-events-update]]
 === 이벤트 수정
 
 `PUT` 요청을 사용해서 기존 이벤트를 수정할 수 있다.
 
-operation::update-event[snippets='request-fields,curl-request,http-response,links']
+operation::update-event[snippets='request-fields,curl-request,http-request,request-headers,http-response,response-headers,response-fields,links']

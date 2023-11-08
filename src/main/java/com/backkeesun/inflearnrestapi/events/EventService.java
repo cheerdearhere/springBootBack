@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class EventService {
@@ -17,5 +19,15 @@ public class EventService {
     }
     public Page<Event> queryEvents(Pageable pageable){
         return eventRepository.findAll(pageable);
+    }
+
+    public Optional<Event> getEvent(Integer id) {
+        return eventRepository.findById(id);
+    }
+
+    public Event saveEvent(Event event, Integer id) {
+        event.update();
+        event.setId(id);
+        return eventRepository.save(event);
     }
 }
