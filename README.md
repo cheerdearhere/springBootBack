@@ -260,6 +260,28 @@ public class ErrorResource extends EntityModel<Errors> {
   .andExpect(jsonPath("errors[0].rejectedValue").exists())
   .andExpect(jsonPath("_links.index").exists()) //error때 이동할 api index
 ```
+## H. Not Found 404 에러
+notFound의 경우 body를 처리할 method가 없어 생성자를 작성해 body를 작성할 수 있음.
+
+```java
+    private ResponseEntity<ErrorResource> notFound(Errors errors){
+        ErrorResource errorResource=new ErrorResource(errors);
+        return new ResponseEntity(errorResource,HttpStatus.NOT_FOUND);
+    }
+```
+그것 없이 헤더만 사용해도됨
+```java
+    @GetMapping("/{id}")
+    public ResponseEntity getEvent(@PathVariable Integer id){
+        Optional<Event> optionalEvent = this.eventService.getEvent(id);
+        if(optionalEvent.isEmpty()){
+            return ResponseEntity.notFound()/*.header("headerName", "headerValue")*/.build();
+        }
+        Event event = optionalEvent.get();
+        EventResource eventResource = new EventResource(event);
+        return ResponseEntity.ok().body(eventResource);
+    }
+```
 # III. 비즈니스 로직 관련
 ## A. Event API 비즈니스 로직
 ### 1. parameters
@@ -856,5 +878,20 @@ queryParam 테스트: 요청할때 param추가
                 .location("서울시 어딘가")
                 .build();
         this.eventRepository.save(event);
+    }
+```
+pathVariable을 사용하는 경우
+```java
+    @Test
+    @DisplayName(value="기존 이벤트 중 하나 조회하기")
+    void getEventOne() throws Exception{
+        //given
+        Event event = this.generateEvent(100);
+        //when
+        ResultActions perform = this.mockMvc.perform(get("/api/events/{id}",event.getId()));
+        //then
+        perform.andDo(print())
+                .andExpect(jsonPath("id").exists())
+        ;
     }
 ```
