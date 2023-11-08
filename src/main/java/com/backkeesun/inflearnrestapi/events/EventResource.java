@@ -8,6 +8,7 @@ import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import java.util.Arrays;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 public class EventResource extends EntityModel<Event> {
     public EventResource(Event event, Link... links){
@@ -17,8 +18,8 @@ public class EventResource extends EntityModel<Event> {
         //데이터가 변경되면 하나하나 직접 변경해야흐므로 아래를 권장
         add(resourceBuilder.withSelfRel());
         add(resourceBuilder.withRel("query-events"));
+//        add(linkTo(methodOn(EventController.class).queryEvents()).withRel("query-events")); 해당 링크의 프로필은 x
         add(resourceBuilder.withRel("update-event"));
-        add(Link.of("/docs/index.html#resources-events-create").withRel("profile"));
     }
 }
 /**
