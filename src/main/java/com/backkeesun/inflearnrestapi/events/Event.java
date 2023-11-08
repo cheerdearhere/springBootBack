@@ -1,5 +1,6 @@
 package com.backkeesun.inflearnrestapi.events;
 
+import com.backkeesun.inflearnrestapi.account.Account;
 import lombok.*;
 import org.springframework.util.StringUtils;
 
@@ -45,6 +46,10 @@ public class Event {
 
     @Enumerated(EnumType.STRING)
     private EventStatus eventStatus = EventStatus.DRAFT;//초기값 설정ㄷ
+
+    //author를 확인하기위한 단방향 매핑
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Account author;
 
     /**
      * 데이터 변경에 따라 연산 데이터를 변경
