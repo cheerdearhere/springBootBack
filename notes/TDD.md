@@ -13,6 +13,7 @@
 [TDD](https://ko.wikipedia.org/wiki/%ED%85%8C%EC%8A%A4%ED%8A%B8_%EC%A3%BC%EB%8F%84_%EA%B0%9C%EB%B0%9C#/media/%ED%8C%8C%EC%9D%BC:TDD_Global_Lifecycle.png)
 
 ## B. 단위 테스트
+### 1. 기본운 given-when-then
 가장 작은 단위(method 구현을 위한 테스트)
 ```java
     @Test
@@ -25,6 +26,43 @@
                 .build();
         //then
         assertThat(event).isNotNull();
+    }
+```
+### 2. 예외를 테스트하는 경우
+#### a. 일반 적인 에러 확인
+```java
+    @Test
+    void notFoundUsername(){
+        String username = "known@Account.com";
+        assertThrows(UsernameNotFoundException.class,()->this.accountService.loadUserByUsername(username));
+    }
+```
+#### b. try-catch로 에러 메세지 점검하기
+```java
+    try{
+        this.accountService.loadUserByUsername(username);
+        fail();
+    }catch (UsernameNotFoundException ue){
+        assertThat(ue.getMessage()).containsSequence(username);
+    }
+```
+#### c. only Junit4: @Rule을 사용해 에러 확인
+테스트 클래스 내부에 예상 예외를 담도록 빈 예외 준비
+```java
+    @Rule
+    public ExpectedException expectedException = ExpectedException.name();
+```
+예상 예외를 적고 테스트 수행
+```java
+    @Test
+    void test(){
+        //given
+        String username = "known@Account.com";
+        //expected
+        expectedException.expect(UsernameNotFoundException.class);
+        expectedException.expectMessage(Matchers.containsString(username));
+        //when
+        this.accountService.loadUserByUsername(username);
     }
 ```
 ## C. 웹 계층 테스트
@@ -166,6 +204,7 @@ junit5 일때 [여기](https://mvnrepository.com/artifact/org.junit.jupiter/juni
 
 수행결과
 ![img_1.png](img_1.png)
+
 ## E. MockMvc를 사용할때 데이터 처리
 ### 1. queryParam 테스트: 요청할때 param추가
 ```java

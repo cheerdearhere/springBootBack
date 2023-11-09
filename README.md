@@ -77,6 +77,8 @@ java 11, spring boot 2.x.x(maven), postgresql(with docker), h2(test), JPA, Lombo
 - password
 - roles: ADMIN or USER
 ```
+### 2. 권한 처리
+[ Spring security ](./notes/SpringSecurity.md)사용
 # IV. 테스트 관련
 [TDD 문서로 이동](./notes/TDD.md)
 # V. 유용한 라이브러리
@@ -85,6 +87,8 @@ java 11, spring boot 2.x.x(maven), postgresql(with docker), h2(test), JPA, Lombo
 ## B. [SpringDataJPA](./notes/SpringDataJPA.md)
 
 ## C. [SpringRESTDocs](./notes/SpringRestDocs.md)
+
+## D. [SpringSecurity](./notes/SpringSecurity.md)
 
 # VI. 기타
 ## A. DB 관련

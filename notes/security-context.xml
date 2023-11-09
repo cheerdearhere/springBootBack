@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	<!-- security처리를 안할 요청경로 -->
+	<http pattern="/ckedit" security="none"></http>
+
+	<!-- security 관련 설정 element 입력 -->
+	<http auto-config="true" use-expressions="true">
+		<access-denied-handler error-page="/main"/>
+		<!-- iframe 허용 -->
+		<headers>
+			<frame-options disabled="true"/>
+		</headers>
+		<!-- permitAll -->
+		<intercept-url pattern="/" access="permitAll"/>
+		<intercept-url pattern="/processLogin" access="permitAll"/>
+		<intercept-url pattern="/lookbook" access="permitAll"/>
+		<intercept-url pattern="/image/**" access="permitAll"/>
+		<intercept-url pattern="/upimage/**" access="permitAll"/>
+		<intercept-url pattern="/media/**" access="permitAll"/>
+		<intercept-url pattern="/html/**" access="permitAll"/>
+		<intercept-url pattern="/style/**" access="permitAll"/>
+		<intercept-url pattern="/js/**" access="permitAll"/>
+		<intercept-url pattern="/pdf/**" access="permitAll"/>
+		<!-- 제품 List까지는 permitAll -->
+		<intercept-url pattern="/bottom" access="permitAll"/>
+		<intercept-url pattern="/skirtView" access="permitAll"/>
+		<intercept-url pattern="/pantView" access="permitAll"/>
+		<intercept-url pattern="/topView" access="permitAll"/>
+		<intercept-url pattern="/outerView" access="permitAll"/>
+		<intercept-url pattern="/etcView" access="permitAll"/>
+		<intercept-url pattern="/newView" access="permitAll"/>
+		<intercept-url pattern="/bestView" access="permitAll"/>
+		<!-- isAnonymous() -->
+		<intercept-url pattern="/home/**" access="isAnonymous()"/>
+		<intercept-url pattern="/loginView" access="isAnonymous()"/>
+		<intercept-url pattern="/joinView" access="isAnonymous()"/>
+		<intercept-url pattern="/login" access="isAnonymous()"/>
+		<intercept-url pattern="/join" access="isAnonymous()"/>
+		<intercept-url pattern="/gredirect" access="isAnonymous()"/>
+		<intercept-url pattern="/nredirect" access="isAnonymous()"/>
+		<intercept-url pattern="/kredirect" access="isAnonymous()"/>
+		<!-- hasAnyRole() -->
+		<intercept-url pattern="/**" access="hasAnyRole('ROLE_USER','ROLE_ADMIN', 'ROLE_MANAGE', 'ROLE_TEMPORARY_USER')" requires-channel="https"/>
+		
+		<form-login
+			login-processing-url="/login"
+			login-page="/loginView"
+			username-parameter="uemail"
+			password-parameter="upw"
+			default-target-url="/main"
+			authentication-failure-url="/progressLogin?error=1"
+			always-use-default-target="true"
+		/>
+		
+		<logout
+			invalidate-session="true"
+			logout-url="/logout"
+			logout-success-url="/processLogin?logout=1"
+			delete-cookies="JSESSIONID,remember-me"
+		/>
+		
+		<remember-me
+			remember-me-parameter="remember-me"
+			remember-me-cookie="remember-me"
+			key="kookskey"
+			token-validity-seconds="3600"
+		/>
+		
+		<csrf disabled="false"/>
+	</http>
+	
+	<!-- Authentication 처리(인증) -->
+	<authentication-manager>
+		<authentication-provider user-service-ref="customUserDetailsService">
+			<password-encoder ref="passwordEncoder"/>
+		</authentication-provider>
+	</authentication-manager>
+	
+	<beans:bean id="customUserDetailsService" class="com.team03.prototype.security.CustomUserDetailsService"/>
+	<!-- SPRING 제공 password 인코더 -->
+	<beans:bean id="passwordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+</beans:beans>
+
