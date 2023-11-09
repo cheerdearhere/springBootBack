@@ -14,8 +14,4 @@ public class BackDemoApplication {
         SpringApplication.run(BackDemoApplication.class, args);
     }
 
-    @Bean
-    public ModelMapper modelMapper(){
-        return new ModelMapper();
-    }
 }

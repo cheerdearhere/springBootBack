@@ -29,9 +29,12 @@ spring:
 #logging
 logging:
   level:
-    org.hibernate:
-      sql: debug # 쿼리문
-      type:
-        descriptor:
-          sql:
-            BasicBinder: trace # 입력된 값
+    org:
+      hibernate:
+        sql: debug # 쿼리문
+        type:
+          descriptor:
+            sql:
+              BasicBinder: trace # 입력된 값
+      springframework:
+        security: DEBUG # spring security check
