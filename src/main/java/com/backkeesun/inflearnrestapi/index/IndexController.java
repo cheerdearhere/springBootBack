@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api")
 public class IndexController {
     @GetMapping
