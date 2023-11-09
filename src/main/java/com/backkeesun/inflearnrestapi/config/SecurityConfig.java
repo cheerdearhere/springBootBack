@@ -88,8 +88,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter { //이곳에 �
 //                .successForwardUrl()//성공시 이동시킬 url
                 //안해도 자동처리됨. 테스트용에서는 처리 안해도 기본페이지 제공
                 .and()
+            .csrf().disable()//CSRF 방지
             .authorizeRequests()//요청에 대한 처리지정
                 .mvcMatchers(HttpMethod.GET,"/api/**").anonymous() // 해당 /api/를 포함한 Get method 요청은 비로그인으로 처리
-                .anyRequest().authenticated();//그 외 나머지 요청은 다 요청
+                .anyRequest().authenticated()//그 외 나머지 요청은 다 요청
+            ;
     }
 }
