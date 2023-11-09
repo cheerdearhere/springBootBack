@@ -33,6 +33,36 @@
 
 => 의존성을 추가한 순간 SpringBoot의 모든 테스트는 fail. 이에대한 설정이 필요하다.
 
+계정을 등록하는 시점에서 passEcoder 등록
+```java
+    public Account saveAccount(Account account){
+        account.setPassword(this.passwordEncoder.encode(account.getPassword()));
+        return this.accountRepository.save(account);
+    }
+```
+테스트때도 service를 사용하도록 변경
+```java
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
+  @Test
+  @DisplayName(value = "이름으로 유저정보 찾기")
+  void findByUsername(){
+          //given
+          String username = "aaa@bbb.com";
+          String password = "username";
+          Account account = createUserData(username,password);
+          this.accountService.saveAccount(account);
+          //when
+          UserDetailsService userDetailsService = accountService;
+          UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+          //then
+          assertThat(userDetails.getUsername()).isEqualTo(username);
+          assertThat(this.passwordEncoder.matches(password,userDetails.getPassword())).isTrue();
+  }
+```
+
+
 만약 로그로 security 관련사항이 보고싶다면 application.properties/yml에 로그수준 지정
 ```yaml
 logging:
@@ -165,6 +195,25 @@ security filter는 진행하지만 보안처리는 안함.
         ;
     }
 ```
+#### g. HttpSecurity를 사용해 정밀하게 체크
+```java
+    @Override
+    protected void configure(HttpSecurity http)throws Exception{
+        http.anonymous()//비인증 접근 허용
+                .and()//설정 병렬로 지정
+            .formLogin()//form login 설정
+                .loginPage()//로그인 페이지 url
+                .passwordParameter()//파라미터명
+                .usernameParameter()
+                .failureForwardUrl()//실패시 이동시킬 url
+                .successForwardUrl()//성공시 이동시킬 url
+                //안해도 자동처리됨. 테스트용에서는 처리 안해도 기본페이지 제공
+                .and()
+            .authorizeRequests()//요청에 대한 처리지정
+                .mvcMatchers(HttpMethod.GET,"/api/**").anonymous() // 해당 /api/를 포함한 Get method 요청은 비로그인으로 처리
+                .anyRequest().authenticated();//그 외 나머지 요청은 다 요청
+    }
+```
 ### 5. Tips...
 #### a. 권한을 처리할때
 Set을 SimpleGrantedAutority로 변환
@@ -176,4 +225,26 @@ Set을 SimpleGrantedAutority로 변환
     private Collection<? extends GrantedAuthority> setAuthorities(Set<AccountRole> roles) {
         return roles.stream().map(r->new SimpleGrantedAuthority("ROLE_"+r.name())).collect(Collectors.toSet());
     }
+```
+#### b.  Security를 적용한 후 매번 회원가입이 귀찮을때
+application이 동작할때 계정을 생성하도록 처리
+```java
+    @Bean
+    public ApplicationRunner applicationRunner(){    // 서버가 시작할때 반드시 해야할 동작이 있는 경우 구현
+        return new ApplicationRunner() {
+            // Test용.. 기존사용자를 매번 만들경우
+            @Autowired
+            AccountService accountService;
+            @Override
+            public void run(ApplicationArguments args) throws Exception {
+                Account testAccount = Account.builder()
+                        .email("dream-ik89@naver.com")
+                        .password("k1234")
+                        .roles(Set.of(AccountRole.USER, AccountRole.ADMOIN))
+                        .build();
+                accountService.saveAccount(testAccount);
+            }
+        };
+    }
+
 ```

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -67,12 +68,28 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter { //이곳에 �
      * @param http
      * @throws Exception
      */
+//    @Override
+//    protected void configure(HttpSecurity http)throws Exception{
+//        http.authorizeRequests()
+//                .mvcMatchers("/docs/index.html").anonymous()
+//                .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).anonymous()
+//        ;
+//    }
+
     @Override
     protected void configure(HttpSecurity http)throws Exception{
-        http.authorizeRequests()
-                .mvcMatchers("/docs/index.html").anonymous()
-                .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).anonymous()
-        ;
+        http.anonymous()//비인증 접근 허용
+                .and()//설정 병렬로 지정
+            .formLogin()//form login 설정
+//                .loginPage()//로그인 페이지 url
+//                .passwordParameter()//파라미터명
+//                .usernameParameter()
+//                .failureForwardUrl()//실패시 이동시킬 url
+//                .successForwardUrl()//성공시 이동시킬 url
+                //안해도 자동처리됨. 테스트용에서는 처리 안해도 기본페이지 제공
+                .and()
+            .authorizeRequests()//요청에 대한 처리지정
+                .mvcMatchers(HttpMethod.GET,"/api/**").anonymous() // 해당 /api/를 포함한 Get method 요청은 비로그인으로 처리
+                .anyRequest().authenticated();//그 외 나머지 요청은 다 요청
     }
-
 }

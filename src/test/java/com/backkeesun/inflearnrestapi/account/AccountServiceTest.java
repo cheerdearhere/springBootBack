@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Set;
@@ -23,8 +24,7 @@ class AccountServiceTest {
     @Autowired
     AccountService accountService;
     @Autowired
-    AccountRepository accountRepository;
-
+    PasswordEncoder passwordEncoder;
 
     @Test
     @DisplayName(value = "이름으로 유저정보 찾기")
@@ -33,21 +33,20 @@ class AccountServiceTest {
         String username = "aaa@bbb.com";
         String password = "username";
         Account account = createUserData(username,password);
-        this.accountRepository.save(account);
+        this.accountService.saveAccount(account);
         //when
         UserDetailsService userDetailsService = accountService;
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         //then
         assertThat(userDetails.getUsername()).isEqualTo(username);
+        assertThat(this.passwordEncoder.matches(password,userDetails.getPassword())).isTrue();
     }
-
     @Test
     @DisplayName(value = "찾는 유저가 없는 경우")
     void notFoundUsername(){
         String username = "known@Account.com";
         //에러타입 확인
         assertThrows(UsernameNotFoundException.class,()->this.accountService.loadUserByUsername(username));
-
         // try-catch로 에러 메세지 점검하기
         try{
             this.accountService.loadUserByUsername(username);
@@ -58,7 +57,6 @@ class AccountServiceTest {
 
 
     }
-
 //     Junit4에서만
 //    @Rule
 //    public ExpectedException expectedException = ExpectedException.name();
@@ -72,7 +70,6 @@ class AccountServiceTest {
 //        //when
 //        this.accountService.loadUserByUsername(username);
 //    }
-
 
     private Account createUserData(String email, String password) {
         return Account.builder()
