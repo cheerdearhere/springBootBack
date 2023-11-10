@@ -1,8 +1,11 @@
 package com.backkeesun.inflearnrestapi.config;
 
 import com.backkeesun.inflearnrestapi.account.AccountService;
+import com.backkeesun.inflearnrestapi.jwtFilter.JwtAuthenticationFilter;
+import com.backkeesun.inflearnrestapi.jwtFilter.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,30 +19,78 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.authentication.OAuth2AuthenticationManager;
+import org.springframework.security.oauth2.provider.token.*;
 import org.springframework.security.oauth2.provider.token.store.InMemoryTokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity //@EnableGlobalMethodSecurity, @EnableWebFluxSecurity도 가능
-//@RequiredArgsConstructor
+@RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter { //이곳에 정의한 설정만 적용
-    @Autowired
-    AccountService accountService;
-    @Autowired
-    PasswordEncoder passwordEncoder;
+    private final AccountService accountService;
+    private final PasswordEncoder passwordEncoder;
+//    private final JwtTokenProvider jwtTokenProvider;
 
     @Bean //TokenStore: InMemoryTokenStore - 토큰을 보관할 Bean 생성
     TokenStore tokenStore(){
         return new InMemoryTokenStore();
     }
-
     @Bean//AuthenticationManagerBean: 토큰 발행, 관리할 서버를 Bean으로 노툴
     @Override
     public AuthenticationManager authenticationManager() throws Exception {
         return super.authenticationManagerBean();
     }
-    /* configure(AuthenticationManagerBuidler auth)로 설정 추가 */
 
+    /*=== 토큰 직접 발행 시도 2 ===*/
+//    @Value("${security.myKey}")
+//    private String SECRET_KEY;
+//    @Bean//AuthenticationManagerBean: 토큰 발행, 관리할 서버를 Bean으로 노툴
+//    @Override
+//    public AuthenticationManager authenticationManager() throws Exception {
+//        final OAuth2AuthenticationManager oAuth2AuthenticationManager = new OAuth2AuthenticationManager();
+//        oAuth2AuthenticationManager.setTokenServices(defaultTokenServices());
+//        return oAuth2AuthenticationManager;
+//    }
+//    @Bean
+//    public ResourceServerTokenServices defaultTokenServices() {
+//        final DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
+//        defaultTokenServices.setTokenEnhancer(tokenEnhancerChain());
+//        defaultTokenServices.setTokenStore(tokenStore());
+//        return defaultTokenServices;
+//    }
+//
+//    @Bean
+//    public JwtAccessTokenConverter tokenEnhancer() {
+//        final JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
+//        jwtAccessTokenConverter.setSigningKey(SECRET_KEY);
+//        return jwtAccessTokenConverter;
+//    }
+//    @Bean
+//    public TokenEnhancerChain tokenEnhancerChain() {
+//        final TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
+//        tokenEnhancerChain.setTokenEnhancers(List.of(new CustomTokenEnhancer(), tokenEnhancer()));
+//        return tokenEnhancerChain;
+//    }
+//
+//    private static class CustomTokenEnhancer implements TokenEnhancer {
+//        @Override
+//        public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
+//            final DefaultOAuth2AccessToken result = new DefaultOAuth2AccessToken(accessToken);
+//            result.getAdditionalInformation().put("userId", accessToken.getAdditionalInformation().get("userId"));
+////            result.getAdditionalInformation().put("companyId", accessToken.getAdditionalInformation().get("companyId"));
+//            return result;
+//        }
+//    }
+
+    /* configure(AuthenticationManagerBuidler auth)로 설정 추가 */
     /**
      * 인증 처리 대상 서비스, 이때 사용할 인코더 지정
      * @param auth
@@ -88,10 +139,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter { //이곳에 �
 //                .successForwardUrl()//성공시 이동시킬 url
                 //안해도 자동처리됨. 테스트용에서는 처리 안해도 기본페이지 제공
                 .and()
-            .csrf().disable()//CSRF 방지
+//            .csrf().disable()//CSRF 방지
             .authorizeRequests()//요청에 대한 처리지정
                 .mvcMatchers(HttpMethod.GET,"/api/**").anonymous() // 해당 /api/를 포함한 Get method 요청은 비로그인으로 처리
                 .anyRequest().authenticated()//그 외 나머지 요청은 다 요청
+        //JWT를 사용할 경우
+//            .formLogin().disable()//form login 설정
+//            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
             ;
     }
+
 }
