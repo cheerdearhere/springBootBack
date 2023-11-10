@@ -21,7 +21,7 @@
 ## B. [시큐리티](https://docs.spring.io/spring-security/reference/getting-spring-security.html)
 
 ## C. 적용하기
-### 3. 의존성 추가
+### 1. 의존성 추가
 ```xml
 <!-- https://mvnrepository.com/artifact/org.springframework.security.oauth.boot/spring-security-oauth2-autoconfigure -->
 <dependency>
@@ -71,7 +71,7 @@ logging:
       springframework:
         security: DEBUG
 ```
-### 4. 기본설정(필수!!)
+### 2. 기본설정(필수!!)
 #### a. 권한 배치 분류
 - 로그인 없이 접근 가능: permitAll
 - 비로그인만 접근 가능: isAnonymous
@@ -214,8 +214,103 @@ security filter는 진행하지만 보안처리는 안함.
                 .anyRequest().authenticated();//그 외 나머지 요청은 다 요청
     }
 ```
-### 5. Tips...
-#### a. 권한을 처리할때
+## D. OAuth2 인증서버 
+### 1. 목적
+  - 테스트 때 토큰 발행, 토큰관리 
+### 2. 인증 방식
+#### a. 일반적인 인증(외부 업체(first party)를 통한 인증)
+고객 계정이 인증 요청 > 인증정보를 가진 서버(like google, kakao, naver...etc.)로 redirection > 정보 제공자의 token(access, refresh)으로 고객정보 재요청 > 정보를 받아 처리
+#### b. 자체 인증관리
+[참조문서](https://developer.okta.com/blog/2018/06/29/what-is-the-oauth2-password-grant)
+직접 인증을 처리하는 경우의 방식(이 프로젝트는 옛방식)
+
+but [새로 업데이트된 내용 참조](https://oauth.net/2/)
+### 3. 의존성 주입
+```xml
+  <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <version>${spring-security.version}</version>
+      <scope>test</scope>
+  </dependency>
+```
+### 4. 내용 작성
+#### a. test code 작성
+```java
+    @Test
+    @DisplayName(value = "인증토큰(accessToken, refreshToken)을 발급받는다.")
+    void getToken() throws Exception {
+        //given
+        String email="abc@def.com";
+        String password ="abc";
+        Account account = createUserData(email,password);
+        this.accountService.saveAccount(account);
+
+        String client_id = "myApp";
+        String client_secret = "passwd";
+        //when
+        ResultActions perform = this.mockMvc.perform(post("/oauth/token")
+                .with(httpBasic(client_id,client_secret))// request header 생성
+                .param("username",email)//인증 정보 삽입
+                .param("password",password)
+                .param("grant_type","password")
+        );//기본으로 제공될 handler
+        //then
+            perform.andExpect(status().isOk())
+            .andDo(print())
+            .andExpect(jsonPath("access_token").exists())
+            .andExpect(jsonPath("refresh_token").isNotEmpty())
+            .andExpect(jsonPath("token_type").value("bearer"))
+            .andExpect(jsonPath("expires_in").isNumber())
+            .andExpect(jsonPath("scope").value("read write"))
+            ;
+    }
+```
+#### b. config class
+security, clients, endpoint 설정
+```java
+@Configuration
+@EnableAuthorizationServer
+@RequiredArgsConstructor
+public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final AccountService accountService;
+    private final TokenStore tokenStore;
+    @Override
+    public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
+        security.passwordEncoder(passwordEncoder);//client_secret을 처리할때
+    }
+
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+        clients.inMemory()//test용 실무에서는 .jdbc로 db처리
+                .withClient("myApp")//client_id
+                .authorizedGrantTypes("password","refresh_token")//grant_type
+                .scopes("read","write")//app에서 정의한 범위
+                .secret(this.passwordEncoder.encode("passwd"))//client_secret
+                .accessTokenValiditySeconds(10 * 60)//토큰 만료시간(sec)
+                .refreshTokenValiditySeconds(6 * 10 * 60);
+    }
+
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        endpoints.authenticationManager(authenticationManager)//authentication처리때 사용할 이전에 등록한 bean 등록
+                .userDetailsService(accountService)
+                .tokenStore(tokenStore);
+    }
+}
+```
+애러해결 못함.
+```asciidoc
+  [조익] [오후 3:35] Token Store를 JWT 설정시 stackoverflow 오류가 발생하는 문제는 Spring Security 버전 문제가 아니였습니다.
+  개발중인 프로젝트를 SpringBoot 2.0.x 도 다운그레이드 해도 동일한 오류가 발생하여 JPA를 사용하고 있어서 OAuth 관련 테이블을 엔터티에서 사용한 연관관계 설정에 문제가 있어 발생한 문제 였습니다.
+  Entity Class 를 삭제하고 OAuth 관련테이블을 Script 로 수동 생성후 해결되었습니다.
+  JWT를 TokenStore로 사용하면 디버깅 해보니 oauth_client_details 만 생성하면 됩니다.
+  아마도 JWT Payload 에서 권한및 토큰의 만료기간등 가지고 있어서...
+```
+## E. Tips...
+### 1. 권한을 처리할때
 Set을 SimpleGrantedAutority로 변환
 ```java
 //UserDetails를 반환할때
@@ -226,7 +321,7 @@ Set을 SimpleGrantedAutority로 변환
         return roles.stream().map(r->new SimpleGrantedAuthority("ROLE_"+r.name())).collect(Collectors.toSet());
     }
 ```
-#### b.  Security를 적용한 후 매번 회원가입이 귀찮을때
+### 2.  Security를 적용한 후 매번 회원가입이 귀찮을때
 application이 동작할때 계정을 생성하도록 처리
 ```java
     @Bean
