@@ -419,7 +419,7 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 현재 get요청은 annoymous가 가능. 그외 요청에만 처리
 ```java
   mockMvc.perform(post("/api/events")//HTTPRequestServlet Method
-        .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
+        .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth())
         .contentType(MediaType.APPLICATION_JSON) // request 구체적 구현
         .accept(MediaTypes.HAL_JSON) 
         ...
