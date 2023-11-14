@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -44,9 +45,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter { //이곳에 �
     TokenStore tokenStore(){
         return new InMemoryTokenStore();
     }
-    @Bean//AuthenticationManagerBean: 토큰 발행, 관리할 서버를 Bean으로 노툴
-    @Override
-    public AuthenticationManager authenticationManager() throws Exception {
+
+    @Bean(BeanIds.AUTHENTICATION_MANAGER)//AuthenticationManagerBean: 토큰 발행, 관리할 서버를 Bean으로 노툴
+    @Override //method명 주의!!~!!authenticationManagerBean가 아님
+    public AuthenticationManager authenticationManagerBean() throws Exception{
         return super.authenticationManagerBean();
     }
 
@@ -142,7 +144,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter { //이곳에 �
                 .and()
 //            .csrf().disable()//CSRF 방지
             .authorizeRequests()//요청에 대한 처리지정
-                .mvcMatchers(HttpMethod.GET,"/api/**").anonymous() // 해당 /api/를 포함한 Get method 요청은 비로그인으로 처리
+                .mvcMatchers(HttpMethod.GET, "/api/**").permitAll()// 해당 /api/를 포함한 Get method 요청은 비로그인으로 처리
                 .anyRequest().authenticated()//그 외 나머지 요청은 다 요청
         //JWT를 사용할 경우
 //            .formLogin().disable()//form login 설정

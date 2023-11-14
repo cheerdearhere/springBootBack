@@ -49,4 +49,4 @@ my-app:
   user-username: admin@user.com
   user-password: l123
   client-id: myapp
-  client-secret: 1a
+  client-secret: testsecret
