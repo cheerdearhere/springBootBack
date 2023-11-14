@@ -40,10 +40,10 @@ class AuthServerConfigTest extends WebMockControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("access_token").exists())
-//                .andExpect(jsonPath("refresh_token").isNotEmpty())
-//                .andExpect(jsonPath("token_type").value("bearer"))
-//                .andExpect(jsonPath("expires_in").isNumber())
-//                .andExpect(jsonPath("scope").value("read write"))
+                .andExpect(jsonPath("refresh_token").isNotEmpty())
+                .andExpect(jsonPath("token_type").value("bearer"))
+                .andExpect(jsonPath("expires_in").isNumber())
+                .andExpect(jsonPath("scope").value("read write"))
         ;
 /*
  * [error 관련 검색내용]
