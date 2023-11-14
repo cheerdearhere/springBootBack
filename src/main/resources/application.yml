@@ -25,9 +25,6 @@ spring:
 #          use_jdbc_metadata_defaults: false
 #    database-platform: org.hibernate.dialect.PostgreSQL9Dialect
     show-sql: true
-#JWT
-security:
-  myKey: test123
 
 #logging
 logging:
@@ -41,3 +38,15 @@ logging:
               BasicBinder: trace # 입력된 값
       springframework:
         security: DEBUG # spring security check
+
+#JWT
+security:
+  myKey: test123
+# my app properties/yml
+my-app:
+  admin-username: natural@user.com
+  admin-password: l123
+  user-username: admin@user.com
+  user-password: l123
+  client-id: myapp
+  client-secret: 1a

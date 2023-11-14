@@ -1,8 +1,10 @@
 package com.backkeesun.inflearnrestapi.config;
 
 import com.backkeesun.inflearnrestapi.account.Account;
+import com.backkeesun.inflearnrestapi.account.AccountRepository;
 import com.backkeesun.inflearnrestapi.account.AccountRole;
 import com.backkeesun.inflearnrestapi.account.AccountService;
+import com.backkeesun.inflearnrestapi.common.AppProperties;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -29,17 +31,26 @@ public class AppConfig {
     @Bean
     public ApplicationRunner applicationRunner(){    // 서버가 시작할때 반드시 해야할 동작이 있는 경우 구현
         return new ApplicationRunner() {
-            // Test용.. 기존사용자를 매번 만들경우
+            // Test용.. 단순 테스트용일뿐... 반복적으로 테스트가 일어날 경우 에러 발생
             @Autowired
             AccountService accountService;
+
+            @Autowired
+            AppProperties appProperties;
             @Override
             public void run(ApplicationArguments args) throws Exception {
-                Account testAccount = Account.builder()
-                        .email("dream-ik89@naver.com")
-                        .password("k1234")
+                Account userAccount = Account.builder()
+                        .email(appProperties.getUserUsername())
+                        .password(appProperties.getUserPassword())
+                        .roles(Set.of(AccountRole.USER))
+                        .build();
+                accountService.saveAccount(userAccount);
+                Account adminAccount = Account.builder()
+                        .email(appProperties.getAdminUsername())
+                        .password(appProperties.getAdminPassword())
                         .roles(Set.of(AccountRole.USER, AccountRole.ADMOIN))
                         .build();
-                accountService.saveAccount(testAccount);
+                accountService.saveAccount(adminAccount);
             }
         };
     }
