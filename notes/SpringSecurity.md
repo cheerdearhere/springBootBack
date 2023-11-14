@@ -310,7 +310,7 @@ but [새로 업데이트된 내용 참조](https://oauth.net/2/)
             ;
     }
 ```
-#### b. config class
+#### b. config class(AuthServerConfig.class)
 security, clients, endpoint 설정
 ```java
 @Configuration
@@ -375,7 +375,83 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
   JWT를 TokenStore로 사용하면 디버깅 해보니 oauth_client_details 만 생성하면 됩니다.
   아마도 JWT Payload 에서 권한및 토큰의 만료기간등 가지고 있어서...
 ```
-## E. Tips...
+## E. Resource 접근 제한(ResourceServerConfig.class)
+### 1. 목적
+리소스에 대한 접근 제어를 담당. 토큰의 유효성을 체크해서 처리
+### 2. 담당 Config class 만들기
+```java
+@Configuration
+@EnableResourceServer
+public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
+    @Override //resource의 id를 설정
+    public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
+        super.configure(resources);
+    }
+
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+        super.configure(http);
+    }
+}
+```
+### 3. resource id(http는 security와 동일)
+```java
+    @Override //resource의 id를 설정
+    public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
+        resources.resourceId("event");//설정하지 않은 부분은 기본설정으로 유지됨
+    }
+
+    @Override
+    public void configure(HttpSecurity http) throws Exception {
+        http.anonymous()
+                .and()
+//                .csrf().disable()
+            .authorizeRequests()
+                .mvcMatchers(HttpMethod.GET, "/api/**").anonymous()
+                .anyRequest().authenticated()
+                .and()
+            .exceptionHandling()//에러가난 경우 처리를 OAuth2의 핸들러에 맡김
+                .accessDeniedHandler(new OAuth2AccessDeniedHandler());
+    }
+```
+
+### 4. 인증 절차가 필요한 요청에 token 처리 추가
+현재 get요청은 annoymous가 가능. 그외 요청에만 처리
+```java
+  mockMvc.perform(post("/api/events")//HTTPRequestServlet Method
+        .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
+        .contentType(MediaType.APPLICATION_JSON) // request 구체적 구현
+        .accept(MediaTypes.HAL_JSON) 
+        ...
+```
+토큰 테스트에서 썼던 것을 가져와 토큰을 반환하도록 처리
+```java
+    private String getAuth() throws Exception {
+        String email="abc@def.com";
+        String password ="abc";
+        Account temp = Account.builder()
+                .email(email)
+                .password(password)
+                .roles(Set.of(AccountRole.USER, AccountRole.ADMOIN))
+                .build();
+        Account account = this.accountService.saveAccount(temp);
+
+        String client_id = "myapp";
+        String client_secret = "1";
+        //when
+        ResultActions perform = this.mockMvc.perform(post("/oauth/token")//url은 자동처리
+                .with(httpBasic(client_id, client_secret))// request header 생성
+                .param("username",email)//인증 정보 삽입
+                .param("password",password)
+                .param("grant_type","password")
+        );//기본으로 제공될 handler
+        String responseStr = perform.andReturn().getResponse().getContentAsString();
+        Jackson2JsonParser parser = new Jackson2JsonParser();
+        return parser.parseMap(responseStr).get("access_token").toString();
+    }
+```
+
+## D. Tips...
 ### 1. 권한을 처리할때
 Set을 SimpleGrantedAutority로 변환
 ```java
@@ -400,12 +476,47 @@ application이 동작할때 계정을 생성하도록 처리
             public void run(ApplicationArguments args) throws Exception {
                 Account testAccount = Account.builder()
                         .email("dream-ik89@naver.com")
-                        .password("k1234")
+                        .password("l123")
                         .roles(Set.of(AccountRole.USER, AccountRole.ADMOIN))
                         .build();
                 accountService.saveAccount(testAccount);
+                Account userAccount = Account.builder()
+                        .email("natural@user.com")
+                        .password("l123")
+                        .roles(Set.of(AccountRole.USER))
+                        .build();
+                accountService.saveAccount(userAccount);
+                Account adminAccount = Account.builder()
+                        .email("admin@user.com")
+                        .password("l123")
+                        .roles(Set.of(AccountRole.USER, AccountRole.ADMOIN))
+                        .build();
+                accountService.saveAccount(adminAccount);
             }
         };
     }
+```
+단순 테스트용일뿐... 반복적으로 테스트가 일어날 경우 에러 발생
+Entity에서 중복을 방지할 경우 Column에 설정 추가
+```java
+    @Column(unique = true)
+    private String email;
+```
 
+### 3. applicationContext를 공유하는 여러 테스트를 할때 duplicate 에러가 날수있음
+inMemory로 처리해도 Context를 공유하는 경우를 위해 전처리 진행 
+```java
+    @BeforeEach //Junit5
+    void beforeEach(){
+        //각 method 실행전에 db 비우기
+        eventRepository.deleteAll();
+        accountRepository.deleteAll();
+    }
+    
+    @Before//JUnit 4
+    public void beforeEach(){
+            //각 method 실행전에 db 비우기
+            eventRepository.deleteAll();
+            accountRepository.deleteAll();
+            }
 ```

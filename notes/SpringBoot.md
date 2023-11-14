@@ -69,8 +69,106 @@ dependency 주입
     Event event = modelMapper.map(eventDto,Event.class);
 ```
 
-## G. BadRequest:400 처리하기
-### 1. 불필요한 값이 전달된경우 fail response 처리하기
+## G. 공통으로 사용하는 정보 외부로 빼내기(ex: 테스트용 공통정보 -  AppProperties )
+[@ConfigurationProperties 사용](https://docs.spring.io/spring-boot/docs/current/reference/html/configuration-metadata.html#appendix.configuration-metadata.format.repeated-items)
+### 1. dependency
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-configuration-processor</artifactId>
+    <optional>true</optional>
+</dependency>
+```
+### 2. 담당 class에 properties 지정
+```java
+@Configuration //bean 등록
+@ConfigurationProperties(prefix = "my-app") //prefix 지정
+@Getter @Setter //입출력
+public class AppProperties {
+    @NotEmpty //required values
+    private String adminUsername;
+    @NotEmpty
+    private String adminPassword;
+    @NotEmpty
+    private String userUsername;
+    @NotEmpty
+    private String uesrPassword;
+    @NotEmpty
+    private String clientId;
+    @NotEmpty
+    private String clientSecret;
+}
+```
+### 3. properties/yml
+```yaml
+my-app:
+  admin-username:
+  admin-password:
+  user-password:
+  user-username:
+  client-id:
+  client-secret: 
+```
+### 4. 설정된 값을 class를 통해 연결
+```java
+//appContext에서 처리할때
+  @Autowired
+  AppProperties appProperties;
+  @Override
+  public void run(ApplicationArguments args) throws Exception {
+      Account userAccount = Account.builder()
+              .email(appProperties.getUserUsername())
+              .password(appProperties.getUserPassword())
+              .roles(Set.of(AccountRole.USER))
+              .build();
+      accountService.saveAccount(userAccount);
+      Account adminAccount = Account.builder()
+              .email(appProperties.getAdminUsername())
+              .password(appProperties.getAdminPassword())
+              .roles(Set.of(AccountRole.USER, AccountRole.ADMOIN))
+              .build();
+      accountService.saveAccount(adminAccount);
+  }
+```
+```java
+//server
+@Override
+public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+  clients.inMemory()//test용 실무에서는 .jdbc로 db처리
+  .withClient(appProperties.getClientId())
+  .authorizedGrantTypes("password","refresh_token")
+  .scopes("read","write")
+  .secret(passwordEncoder.encode(appProperties.getClientSecret()))
+  //  토큰 만료시간(sec)
+  .accessTokenValiditySeconds(30 * 60)
+  .refreshTokenValiditySeconds(60 * 60)
+  ;
+}
+```
+```java
+//TEST
+@Autowired
+    AppProperties appProperties;
+@Test
+@DisplayName(value = "인증토큰(accessToken, refreshToken)을 발급받는다.")
+    void getToken() throws Exception {
+            //given
+            //when
+            ResultActions perform = this.mockMvc.perform(post("/oauth/token")//url은 자동처리
+            .with(httpBasic(appProperties.getClientId(), appProperties.getClientSecret()))// request header 생성
+            .param("username",appProperties.getUserUsername())//인증 정보 삽입
+            .param("password",appProperties.getUserPassword())
+            .param("grant_type","password")
+            );//기본으로 제공될 handler
+            // then
+            perform
+            .andDo(print())
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("access_token").exists())
+```
+## H. Response 처리하기
+### 1. BadRequest:400 
+#### a. 불필요한 값이 전달된경우 fail response 처리하기
 불필요한 값을 무시할지 체크할지 개발자가 결정
 ModelMapping library를 사용하는 경우 설정만 변경(application.yml/properties)
 ```yaml
@@ -79,7 +177,7 @@ ModelMapping library를 사용하는 경우 설정만 변경(application.yml/pro
             deserialization:
                 fail-on-unknown-properties: true # mapping 과정에서 불필요가 있는경우 fail 처리
 ```
-### 2. Spring MVC 기능 이용하기
+#### b. Spring MVC 기능 이용하기
 a. 값이 없는 경우 :controller에 @Valid 삽입, param으로 Error 객체 받음
 ```java
     @PostMapping
@@ -101,7 +199,7 @@ parameter로 사용하는 DTO에서 validation의 어노테이션 사용
     private int basePrice; // optional이지만 양수
 ```
 
-### 3. customized validation bean (만들어서 사용)
+#### c. customized validation bean (만들어서 사용)
 컴포넌트를 새로 작성하고
 ```java
     @Component
@@ -141,7 +239,7 @@ errors.rejectValue("endEventDateTime","0001","endEventDateTime must be before ot
             }
             ...
 ```
-### 4. 에러 응답 메세지 본문 만들기
+#### d. 에러 응답 메세지 본문 만들기
 ResponseEntity 객체의 body에 삽입해 client가 원인을 확인하도록 함
 
 but, java bean 규칙에 따른 properties를 갖는 Event 객체와 달리 errors는 에러를 발생한다.(아래와 같이 불가)
@@ -186,7 +284,7 @@ JSON으로 변환시킬때 ObjectMapper의 beanSerializer()를 쓰는데 이때 
     }
 ```
 변환 처리 후 controller의 ....body(errors);처리
-### 5. 에러 응답 메세지 본문 만들기
+#### e. 에러 응답 메세지 본문 만들기
 에러때 event api의 index로 이동시키기
 1. index 응답용 api
 ```java
@@ -229,7 +327,8 @@ public class ErrorResource extends EntityModel<Errors> {
   .andExpect(jsonPath("errors[0].rejectedValue").exists())
   .andExpect(jsonPath("_links.index").exists()) //error때 이동할 api index
 ```
-## H. Not Found 404 에러
+
+### 2. Not Found 404 에러
 notFound의 경우 body를 처리할 method가 없어 생성자를 작성해 body를 작성할 수 있음.
 
 ```java
