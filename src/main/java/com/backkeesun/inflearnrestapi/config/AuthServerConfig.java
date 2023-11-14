@@ -36,8 +36,8 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {//"/
                 .scopes("read","write")
                 .secret(passwordEncoder.encode(appProperties.getClientSecret()))
                 //  토큰 만료시간(sec)
-                .accessTokenValiditySeconds(30 * 60)
-                .refreshTokenValiditySeconds(60 * 60)
+                .accessTokenValiditySeconds(30 * 60 * 60)
+                .refreshTokenValiditySeconds(60 * 60 * 60)
         ;
     }
 
