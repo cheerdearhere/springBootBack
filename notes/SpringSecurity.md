@@ -155,7 +155,14 @@ TokenStore: InMemoryTokenStore - 토큰을 보관할 Bean 생성
     }
 ```
 AuthenticationManagerBean: 토큰 발행, 관리할 서버를 Bean으로 노툴
+[에러 참고](https://stackoverflow.com/questions/61594513/while-try-to-authenticate-my-login-i-am-getting-error-handler-dispatch-failed)
 ```java
+  @Bean(BeanIds.AUTHENTICATION_MANAGER)//AuthenticationManagerBean: 토큰 발행, 관리할 서버를 Bean으로 노툴
+  @Override //method명 주의!!~!!authenticationManagerBean가 아님
+  public AuthenticationManager authenticationManagerBean() throws Exception{
+    return super.authenticationManagerBean();
+  }
+
     @Bean
     @Override
     public AuthenticationManager authenticationManager() throws Exception {
@@ -367,14 +374,7 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
             ;
     }
 ```
-애러해결 못함.
-```asciidoc
-  [조익] [오후 3:35] Token Store를 JWT 설정시 stackoverflow 오류가 발생하는 문제는 Spring Security 버전 문제가 아니였습니다.
-  개발중인 프로젝트를 SpringBoot 2.0.x 도 다운그레이드 해도 동일한 오류가 발생하여 JPA를 사용하고 있어서 OAuth 관련 테이블을 엔터티에서 사용한 연관관계 설정에 문제가 있어 발생한 문제 였습니다.
-  Entity Class 를 삭제하고 OAuth 관련테이블을 Script 로 수동 생성후 해결되었습니다.
-  JWT를 TokenStore로 사용하면 디버깅 해보니 oauth_client_details 만 생성하면 됩니다.
-  아마도 JWT Payload 에서 권한및 토큰의 만료기간등 가지고 있어서...
-```
+
 ## E. Resource 접근 제한(ResourceServerConfig.class)
 ### 1. 목적
 리소스에 대한 접근 제어를 담당. 토큰의 유효성을 체크해서 처리
