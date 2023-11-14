@@ -254,7 +254,7 @@ security filter는 진행하지만 보안처리는 안함.
                 //안해도 자동처리됨. 테스트용에서는 처리 안해도 기본페이지 제공
                 .and()
             .authorizeRequests()//요청에 대한 처리지정
-                .mvcMatchers(HttpMethod.GET,"/api/**").anonymous() // 해당 /api/를 포함한 Get method 요청은 비로그인으로 처리
+                .mvcMatchers(HttpMethod.GET,"/api/**").permitAll() // 해당 /api/를 포함한 Get method 요청은 비로그인으로 처리
                 .anyRequest().authenticated();//그 외 나머지 요청은 다 요청
     }
 ```
@@ -359,7 +359,7 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
                 .and()
 //            .csrf().disable()//CSRF 방지
             .authorizeRequests()//요청에 대한 처리지정
-                .mvcMatchers(HttpMethod.GET,"/api/**").anonymous() // 해당 /api/를 포함한 Get method 요청은 비로그인으로 처리
+                .mvcMatchers(HttpMethod.GET,"/api/**").permitAll() // 해당 /api/를 포함한 Get method 요청은 비로그인으로 처리
                 .anyRequest().authenticated()//그 외 나머지 요청은 다 요청
         //JWT를 사용할 경우
 //            .formLogin().disable()//form login 설정
@@ -407,7 +407,7 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
                 .and()
 //                .csrf().disable()
             .authorizeRequests()
-                .mvcMatchers(HttpMethod.GET, "/api/**").anonymous()
+                .mvcMatchers(HttpMethod.GET, "/api/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
             .exceptionHandling()//에러가난 경우 처리를 OAuth2의 핸들러에 맡김

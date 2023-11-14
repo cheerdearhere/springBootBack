@@ -22,7 +22,7 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
                 .and()
 //                .csrf().disable()
             .authorizeRequests()
-                .mvcMatchers(HttpMethod.GET, "/api/**").anonymous()
+                .mvcMatchers(HttpMethod.GET, "/api/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
             .exceptionHandling()//에러가난 경우 처리를 OAuth2의 핸들러에 맡김

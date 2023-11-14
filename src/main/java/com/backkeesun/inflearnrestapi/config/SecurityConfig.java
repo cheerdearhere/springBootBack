@@ -142,7 +142,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter { //이곳에 �
                 .and()
 //            .csrf().disable()//CSRF 방지
             .authorizeRequests()//요청에 대한 처리지정
-                .mvcMatchers(HttpMethod.GET,"/api/**").anonymous() // 해당 /api/를 포함한 Get method 요청은 비로그인으로 처리
+                .mvcMatchers(HttpMethod.GET, "/api/**").permitAll()// 해당 /api/를 포함한 Get method 요청은 비로그인으로 처리
                 .anyRequest().authenticated()//그 외 나머지 요청은 다 요청
         //JWT를 사용할 경우
 //            .formLogin().disable()//form login 설정

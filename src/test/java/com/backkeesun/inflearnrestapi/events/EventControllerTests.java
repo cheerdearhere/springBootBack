@@ -613,6 +613,7 @@ class EventControllerTests extends WebMockControllerTest {
     }
 
     private String getAuth() throws Exception {
+        //save user data
         String email=appProperties.getUserUsername();
         String password =appProperties.getUserPassword();
         Account temp = Account.builder()
@@ -621,14 +622,14 @@ class EventControllerTests extends WebMockControllerTest {
                 .roles(Set.of(AccountRole.USER, AccountRole.ADMOIN))
                 .build();
         this.accountService.saveAccount(temp);
-
-        //when
+        //get Token
         ResultActions perform = this.mockMvc.perform(post("/oauth/token")//url은 자동처리
                 .with(httpBasic(appProperties.getClientId(), appProperties.getClientSecret()))// request header 생성
                 .param("username",email)//인증 정보 삽입
                 .param("password",password)
                 .param("grant_type","password")
-        );//기본으로 제공될 handler
+        );
+        //return token from response
         String responseStr = perform.andReturn().getResponse().getContentAsString();
         Jackson2JsonParser parser = new Jackson2JsonParser();
         return parser.parseMap(responseStr).get("access_token").toString();
