@@ -451,6 +451,7 @@ class EventControllerTests extends WebMockControllerTest {
                                 fieldWithPath("offline").description("has location ? true : false"),
                                 fieldWithPath("free").description("has basePrice or maxPrice ? false : true"),
                                 fieldWithPath("eventStatus").description("event's current status"),
+                                fieldWithPath("author").description("author"),
                                 //optional fields
                                 fieldWithPath("_links.self.href").type(JsonFieldType.STRING).description("my href").optional(),
                                 fieldWithPath("_links.query-events.href").type(JsonFieldType.STRING).description("my href").optional(),
@@ -531,6 +532,7 @@ class EventControllerTests extends WebMockControllerTest {
                                 fieldWithPath("offline").description("has location ? true : false"),
                                 fieldWithPath("free").description("has basePrice or maxPrice ? false : true"),
                                 fieldWithPath("eventStatus").description("event's current status"),
+                                fieldWithPath("author").description("author"),
                                 //optional fields
                                 fieldWithPath("_links.self.href").ignored(),
                                 fieldWithPath("_links.query-events.href").ignored(),
