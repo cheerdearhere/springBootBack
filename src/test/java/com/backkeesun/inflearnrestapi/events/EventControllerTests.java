@@ -4,6 +4,7 @@ import com.backkeesun.inflearnrestapi.account.Account;
 import com.backkeesun.inflearnrestapi.account.AccountRepository;
 import com.backkeesun.inflearnrestapi.account.AccountRole;
 import com.backkeesun.inflearnrestapi.account.AccountService;
+import com.backkeesun.inflearnrestapi.common.AppProperties;
 import com.backkeesun.inflearnrestapi.common.RestDocsConfiguration;
 import com.backkeesun.inflearnrestapi.common.WebMockControllerTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,6 +62,8 @@ class EventControllerTests extends WebMockControllerTest {
     AccountService accountService;
     @Autowired
     AccountRepository accountRepository;
+    @Autowired
+    AppProperties appProperties;
 
     @BeforeEach
     void beforeEach(){
@@ -109,30 +112,6 @@ class EventControllerTests extends WebMockControllerTest {
         /* TDD는 보통 데이터 3개 정도를 넣고 진행 */
     }
     
-    private String getAuth() throws Exception {
-        String email="abc@def.com";
-        String password ="abc";
-        Account temp = Account.builder()
-                .email(email)
-                .password(password)
-                .roles(Set.of(AccountRole.USER, AccountRole.ADMOIN))
-                .build();
-        Account account = this.accountService.saveAccount(temp);
-
-        String client_id = "myapp";
-        String client_secret = "1";
-        //when
-        ResultActions perform = this.mockMvc.perform(post("/oauth/token")//url은 자동처리
-                .with(httpBasic(client_id, client_secret))// request header 생성
-                .param("username",email)//인증 정보 삽입
-                .param("password",password)
-                .param("grant_type","password")
-        );//기본으로 제공될 handler
-        String responseStr = perform.andReturn().getResponse().getContentAsString();
-        Jackson2JsonParser parser = new Jackson2JsonParser();
-        return parser.parseMap(responseStr).get("access_token").toString();
-    }
-
     @Test
     @DisplayName(value = "불필요한 값이 입력 됐을때 response code 체크")
     void createEvent_BadRequest() throws Exception {
@@ -373,20 +352,6 @@ class EventControllerTests extends WebMockControllerTest {
                 ));
     }
 
-    private static EventDto inputDataObject(String name, String description, int basePrice, int maxPrice, String location) {
-        return EventDto.builder()
-                .name(name)
-                .description(description)
-                .beginEnrollmentDateTime(LocalDateTime.of(2023,11,12,13,21))
-                .closeEnrollmentDateTime(LocalDateTime.of(2023,12,30,11,12))
-                .beginEventDateTime(LocalDateTime.of(2023, 11, 14,10,5))
-                .endEventDateTime(LocalDateTime.of(2024,12,1,23,1))
-                .basePrice(basePrice)
-                .maxPrice(maxPrice)
-                .location(location)
-                .build();
-    }
-
     @Test
     @DisplayName(value="30개의 이벤트를 10개씩 조회 - 2page")
     void queryEvents() throws Exception{
@@ -443,24 +408,6 @@ class EventControllerTests extends WebMockControllerTest {
                                 fieldWithPath("_links.profile.href").description("Link to profile page").optional()
                         )
                 ));
-    }
-
-    private Event generateEvent(int i) {
-        int basePrice = i%3 == 0 ? 0 :100;
-        int maxPrice = i%3 == 1 ? 0 : 200;
-        String location = i%2 == 0 ? "" : "서울시 어딘가" ;
-        Event event = Event.builder()
-                .name("event"+i)
-                .description("test event")
-                .beginEnrollmentDateTime(LocalDateTime.of(2018,11,12,13,21))
-                .closeEnrollmentDateTime(LocalDateTime.of(2018,12,30,11,12))
-                .beginEventDateTime(LocalDateTime.of(2018, 11, 14,10,5))
-                .endEventDateTime(LocalDateTime.of(2019,12,1,23,1))
-                .basePrice(basePrice)
-                .maxPrice(maxPrice)
-                .location(location)
-                .build();
-        return this.eventRepository.save(event);
     }
 
     @Test
@@ -645,4 +592,59 @@ class EventControllerTests extends WebMockControllerTest {
         perform.andExpect(status().isBadRequest())
                 .andDo(print());
     }
+
+    /*=== Private Method ===*/
+    private Event generateEvent(int i) {
+        int basePrice = i%3 == 0 ? 0 :100;
+        int maxPrice = i%3 == 1 ? 0 : 200;
+        String location = i%2 == 0 ? "" : "서울시 어딘가" ;
+        Event event = Event.builder()
+                .name("event"+i)
+                .description("test event")
+                .beginEnrollmentDateTime(LocalDateTime.of(2018,11,12,13,21))
+                .closeEnrollmentDateTime(LocalDateTime.of(2018,12,30,11,12))
+                .beginEventDateTime(LocalDateTime.of(2018, 11, 14,10,5))
+                .endEventDateTime(LocalDateTime.of(2019,12,1,23,1))
+                .basePrice(basePrice)
+                .maxPrice(maxPrice)
+                .location(location)
+                .build();
+        return this.eventRepository.save(event);
+    }
+
+    private String getAuth() throws Exception {
+        String email=appProperties.getUserUsername();
+        String password =appProperties.getUserPassword();
+        Account temp = Account.builder()
+                .email(email)
+                .password(password)
+                .roles(Set.of(AccountRole.USER, AccountRole.ADMOIN))
+                .build();
+        this.accountService.saveAccount(temp);
+
+        //when
+        ResultActions perform = this.mockMvc.perform(post("/oauth/token")//url은 자동처리
+                .with(httpBasic(appProperties.getClientId(), appProperties.getClientSecret()))// request header 생성
+                .param("username",email)//인증 정보 삽입
+                .param("password",password)
+                .param("grant_type","password")
+        );//기본으로 제공될 handler
+        String responseStr = perform.andReturn().getResponse().getContentAsString();
+        Jackson2JsonParser parser = new Jackson2JsonParser();
+        return parser.parseMap(responseStr).get("access_token").toString();
+    }
+    private static EventDto inputDataObject(String name, String description, int basePrice, int maxPrice, String location) {
+        return EventDto.builder()
+                .name(name)
+                .description(description)
+                .beginEnrollmentDateTime(LocalDateTime.of(2023,11,12,13,21))
+                .closeEnrollmentDateTime(LocalDateTime.of(2023,12,30,11,12))
+                .beginEventDateTime(LocalDateTime.of(2023, 11, 14,10,5))
+                .endEventDateTime(LocalDateTime.of(2024,12,1,23,1))
+                .basePrice(basePrice)
+                .maxPrice(maxPrice)
+                .location(location)
+                .build();
+    }
+    /*=== /Private Method ===*/
 }
