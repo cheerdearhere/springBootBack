@@ -450,8 +450,161 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
         return parser.parseMap(responseStr).get("access_token").toString();
     }
 ```
+## F. 현재 사용자 조회하기
+### 1. 현재 authentication 정보 확인하기
+유저의 데이터를 security의 User class로 받을 수 있음
+```java
+  Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+  User userDetails =(User) authentication.getPrincipal();
+```
+![img.png](SecurityContextHolder.png)
+이를 해결해주는 @AuthenticationPrincipal 어노테이션
+```java
+    public ResponseEntity queryEvents(
+            Pageable pageable,
+            PagedResourcesAssembler<Event> pagedResourcesAssembler,
+            @AuthenticationPrincipal User user
+    ){
+```
+조건에 맞게 처리
+```java
+        if(user != null){
+            pageEntityModel.add(linkTo(EventController.class).withRel("create-event"));
+        }
+```
+### 2. security....User를 우리가 쓰는 Account로 대체하기
+#### a. AccountAdapter.class
+```java
+public class AccountAdepter extends User {
+    private Account account;
+    public AccountAdepter(Account account){
+        super(account.getEmail(),account.getPassword(),authorities(account));
+        this.account = account;
+    }
+    public Account getAccount(){
+        return account;
+    }
+    private static Collection<? extends GrantedAuthority> authorities(Account account) {
+        return account.getRoles()
+                .stream()
+                .map(role->new SimpleGrantedAuthority("ROLE_"+role.name()))
+                .collect(Collectors.toSet());
+    }
+}
+```
+#### b. AccountService에서 User대신 상속한 AccountAdepter 사용
+```java
+@Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Account account = accountRepository.findByEmail(username).orElseThrow(()->new UsernameNotFoundException(username));
+        return new AccountAdepter(account);
+    }
+```
+#### c. controller에서 권한 처리
+```java
+    public ResponseEntity queryEvents(
+            Pageable pageable,
+            PagedResourcesAssembler<Event> pagedResourcesAssembler,
+            @AuthenticationPrincipal AccountAdepter currentUser
+    ){
+        ...
+        if(currentUser != null){
+            pageEntityModel.add(linkTo(EventController.class).withRel("create-event"));
+        }
+    }
+```
+#### d. 바로 Account class로 받을경우: Spring expression 사용
+```java
+    @GetMapping
+    //Pageable로 paging에 필요한 parameter를 받음(Spring data JPA가 제공)
+    public ResponseEntity queryEvents(
+            Pageable pageable,
+            PagedResourcesAssembler<Event> pagedResourcesAssembler,
+            @AuthenticationPrincipal(expression = "account") Account currentUser
+            ){
+```
+![img.png](AuthenticationPrincipal.png)
+#### e. Custom Annotation 만들어서 사용하기
+```java
+//어노테이션 생성
+@Target(ElementType.PARAMETER)
+@Retention(RetentionPolicy.RUNTIME)
+@AuthenticationPrincipal(expression = "account")
+public @interface CustomAccount {
+}
 
-## D. Tips...
+//Controller에 적용
+public ResponseEntity queryEvents(
+        Pageable pageable,
+        PagedResourcesAssembler<Event> pagedResourcesAssembler,
+        @CustomAccount Account currentUser
+){
+```
+#### f. 권한을 받지 않고 처리하는 경우
+princippal이 "annonymousUser"의 문자열로 표기됨
+
+custom annotation에 조건에 따른 값 변화 처리
+```java
+@Target(ElementType.PARAMETER)
+@Retention(RetentionPolicy.RUNTIME)
+@AuthenticationPrincipal(expression = "#this == 'anonymousUser' ? null : account")
+public @interface CustomAccount {
+}
+```
+#### g. 유저 정보 활용방법
+작성자 표시하기
+```java
+    @PostMapping
+    public ResponseEntity createEvent(
+            @RequestBody @Valid EventDto eventDto,
+            Errors errors,
+            @CustomAccount Account author //현재 계정 정보
+    ){
+        if(errors.hasErrors()){
+            return badRequest(errors);
+        }
+        eventValidator.validate(eventDto,errors);
+        if(errors.hasErrors()){
+            return badRequest(errors);
+        }
+        Event event = modelMapper.map(eventDto,Event.class);
+        event.setAuthor(author);//작성자 추가
+        Event newEvent = eventService.createEvent(event);
+        ...
+```
+조회할때 정보 추가하기
+```java
+    @GetMapping
+    public ResponseEntity queryEvents(
+            Pageable pageable,
+            PagedResourcesAssembler<Event> pagedResourcesAssembler,
+            @CustomAccount Account currentUser
+    ){
+        ...
+        if(currentUser != null){
+            pageEntityModel.add(linkTo(EventController.class).withRel("create-event"));
+        }
+        ...
+    }
+```
+단건인 경우 수정 url 처리
+```java
+    if(event.getAuthor().equals(currentAccount)){
+        eventResource.add(linkTo(EventController.class).slash(event.getId()).withRel("update-event"));
+    }
+```
+수정할때 권한 확인
+```java
+  Event originalEvent = optionalEvent.get();
+  if(!originalEvent.getAuthor().equals(currentAccount)){
+      return new ResponseEntity(HttpStatus.UNAUTHORIZED);
+  }
+```
+등등
+## G. 출력값 제한하기 
+출력되는 값에 나가서는 안될 정보(password 등)를 제한하는 방법
+
+## H. Tips...
 ### 1. 권한을 처리할때
 Set을 SimpleGrantedAutority로 변환
 ```java
