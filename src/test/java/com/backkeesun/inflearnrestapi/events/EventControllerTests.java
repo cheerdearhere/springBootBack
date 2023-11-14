@@ -413,6 +413,34 @@ class EventControllerTests extends WebMockControllerTest {
     }
 
     @Test
+    @DisplayName(value="인증정보와 함께 30개의 이벤트를 10개씩 조회 - 2page")
+    void queryEventsWithAuthentication() throws Exception{
+        //given
+        IntStream.range(0,30).forEach(this::generateEvent);
+        //when
+        ResultActions perform = this.mockMvc.perform(get("/api/events")
+                .header(HttpHeaders.AUTHORIZATION, getAuth())
+                .param("page", "1")
+                .param("size", "10")
+                .param("sort", "name,DESC")
+        );
+        //then
+        perform.andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("page").exists()) //paging data
+                .andExpect(jsonPath("_links.first").exists()) //paging link
+                .andExpect(jsonPath("_links.prev").exists())
+                .andExpect(jsonPath("_links.self").exists())
+                .andExpect(jsonPath("_links.next").exists())
+                .andExpect(jsonPath("_links.last").exists())
+                .andExpect(jsonPath("_links.profile").exists())
+                .andExpect(jsonPath("_embedded.eventList[0]._links.query-events").exists())
+                .andExpect(jsonPath("_embedded.eventList[0]._links.update-event").exists())
+                .andExpect(jsonPath("_embedded.eventList[0]._links.create-event").exists())//인증정보가 있는 경우 글작성 기능 활성
+        ;
+    }
+
+    @Test
     @DisplayName(value="기존 이벤트 중 하나 조회하기")
     void getEventOne() throws Exception{
         //given
