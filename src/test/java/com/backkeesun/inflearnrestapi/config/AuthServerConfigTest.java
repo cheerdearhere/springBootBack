@@ -3,6 +3,7 @@ package com.backkeesun.inflearnrestapi.config;
 import com.backkeesun.inflearnrestapi.account.Account;
 import com.backkeesun.inflearnrestapi.account.AccountRole;
 import com.backkeesun.inflearnrestapi.account.AccountService;
+import com.backkeesun.inflearnrestapi.common.AppProperties;
 import com.backkeesun.inflearnrestapi.common.WebMockControllerTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,22 +22,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthServerConfigTest extends WebMockControllerTest {
     @Autowired
     AccountService accountService;
-
+    @Autowired
+    AppProperties appProperties;
     @Test
     @DisplayName(value = "인증토큰(accessToken, refreshToken)을 발급받는다.")
     void getToken() throws Exception {
         //given
-        String email="abc@def.com";
-        String password ="abc";
-        Account account = createUserData(email,password);
-
-        String client_id = "myapp";
-        String client_secret = "1";
         //when
         ResultActions perform = this.mockMvc.perform(post("/oauth/token")//url은 자동처리
-                .with(httpBasic(client_id, client_secret))// request header 생성
-                .param("username",email)//인증 정보 삽입
-                .param("password",password)
+                .with(httpBasic(appProperties.getClientId(), appProperties.getClientSecret()))// request header 생성
+                .param("username",appProperties.getUserUsername())//인증 정보 삽입
+                .param("password",appProperties.getUserPassword())
                 .param("grant_type","password")
         );//기본으로 제공될 handler
         // then
