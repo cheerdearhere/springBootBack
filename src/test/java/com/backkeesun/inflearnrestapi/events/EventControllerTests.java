@@ -1,9 +1,15 @@
 package com.backkeesun.inflearnrestapi.events;
 
+import com.backkeesun.inflearnrestapi.account.Account;
+import com.backkeesun.inflearnrestapi.account.AccountRepository;
+import com.backkeesun.inflearnrestapi.account.AccountRole;
+import com.backkeesun.inflearnrestapi.account.AccountService;
 import com.backkeesun.inflearnrestapi.common.RestDocsConfiguration;
 import com.backkeesun.inflearnrestapi.common.WebMockControllerTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,11 +21,13 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
+import org.springframework.security.oauth2.common.util.Jackson2JsonParser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import static org.springframework.restdocs.headers.HeaderDocumentation.*;
@@ -27,6 +35,7 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -48,6 +57,18 @@ class EventControllerTests extends WebMockControllerTest {
 //    @Autowired
 //    ObjectMapper objectMapper;// json으로 변환
     //repository도 포함되므로 Mockito는 필요 x
+    @Autowired // 권한 처리용
+    AccountService accountService;
+    @Autowired
+    AccountRepository accountRepository;
+
+    @BeforeEach
+    void beforeEach(){
+        //각 method 실행 전에 db 비우기
+        eventRepository.deleteAll();
+        accountRepository.deleteAll();
+    }
+
     @Test
     @DisplayName(value = "정상 처리된 경우 확인")
     void createEvent() throws Exception {
@@ -70,6 +91,7 @@ class EventControllerTests extends WebMockControllerTest {
                 .build();
         //when & then
         mockMvc.perform(post("/api/events")//HTTPRequestServlet Method
+                            .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
                             .contentType(MediaType.APPLICATION_JSON) // request 구체적 구현
                             .accept(MediaTypes.HAL_JSON) // HAL JSON response 요구
                             .content(objectMapper.writeValueAsString(event))// object를 JsonString으로 변환
@@ -86,6 +108,31 @@ class EventControllerTests extends WebMockControllerTest {
 //                .andExpect(jsonPath("offline").value(Matchers.not(false))); 아직 내부 연산 처리 안됨
         /* TDD는 보통 데이터 3개 정도를 넣고 진행 */
     }
+    
+    private String getAuth() throws Exception {
+        String email="abc@def.com";
+        String password ="abc";
+        Account temp = Account.builder()
+                .email(email)
+                .password(password)
+                .roles(Set.of(AccountRole.USER, AccountRole.ADMOIN))
+                .build();
+        Account account = this.accountService.saveAccount(temp);
+
+        String client_id = "myapp";
+        String client_secret = "1";
+        //when
+        ResultActions perform = this.mockMvc.perform(post("/oauth/token")//url은 자동처리
+                .with(httpBasic(client_id, client_secret))// request header 생성
+                .param("username",email)//인증 정보 삽입
+                .param("password",password)
+                .param("grant_type","password")
+        );//기본으로 제공될 handler
+        String responseStr = perform.andReturn().getResponse().getContentAsString();
+        Jackson2JsonParser parser = new Jackson2JsonParser();
+        return parser.parseMap(responseStr).get("access_token").toString();
+    }
+
     @Test
     @DisplayName(value = "불필요한 값이 입력 됐을때 response code 체크")
     void createEvent_BadRequest() throws Exception {
@@ -108,6 +155,7 @@ class EventControllerTests extends WebMockControllerTest {
                 .build();
         //when & then
         mockMvc.perform(post("/api/events")//HTTPRequestServlet Method
+                            .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
                             .contentType(MediaType.APPLICATION_JSON) // request 구체적 구현
                             .accept(MediaTypes.HAL_JSON) // HAL JSON response 요구
                             .content(objectMapper.writeValueAsString(event))// object를 JsonString으로 변환
@@ -122,6 +170,7 @@ class EventControllerTests extends WebMockControllerTest {
         EventDto eventDto = EventDto.builder().build();
         //when then
         mockMvc.perform(post("/api/events")
+                        .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON)
                         .content(objectMapper.writeValueAsString(eventDto))
@@ -150,6 +199,7 @@ class EventControllerTests extends WebMockControllerTest {
                 .build();
         //when then
         mockMvc.perform(post("/api/events")
+                        .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON)
                         .content(objectMapper.writeValueAsString(eventDto))
@@ -200,6 +250,7 @@ class EventControllerTests extends WebMockControllerTest {
     void createWithLink() throws Exception{
         EventDto eventDto = inputDataObject("이름", "설명 설명", 100, 200, "서울시 어딘가");
         mockMvc.perform(post("/api/events")
+                        .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON_VALUE)
                         .content(objectMapper.writeValueAsString(eventDto))
@@ -220,6 +271,7 @@ class EventControllerTests extends WebMockControllerTest {
     void restDocsBasic()throws Exception{
         EventDto eventDto = inputDataObject("이름", "설명 설명", 100, 200, "서울시 어딘가");
         mockMvc.perform(post("/api/events")
+                        .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON_VALUE)
                         .content(objectMapper.writeValueAsString(eventDto))
@@ -254,6 +306,7 @@ class EventControllerTests extends WebMockControllerTest {
     void restDocsField() throws Exception{
         EventDto eventDto = inputDataObject("이름", "설명 설명", 100, 200, "서울시 어딘가");
         mockMvc.perform(post("/api/events")
+                        .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON_VALUE)
                         .content(objectMapper.writeValueAsString(eventDto))
@@ -451,6 +504,7 @@ class EventControllerTests extends WebMockControllerTest {
                                 fieldWithPath("offline").description("has location ? true : false"),
                                 fieldWithPath("free").description("has basePrice or maxPrice ? false : true"),
                                 fieldWithPath("eventStatus").description("event's current status"),
+                                fieldWithPath("author").description("author"),
                                 //optional fields
                                 fieldWithPath("_links.self.href").type(JsonFieldType.STRING).description("my href").optional(),
                                 fieldWithPath("_links.query-events.href").type(JsonFieldType.STRING).description("my href").optional(),
@@ -477,6 +531,7 @@ class EventControllerTests extends WebMockControllerTest {
         EventDto updateDto = inputDataObject("updated event Name", "test is success", 111, 222, "test city");
         //when
         ResultActions perform = this.mockMvc.perform(put("/api/events/{id}", event.getId())
+                .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaTypes.HAL_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(updateDto))
@@ -531,6 +586,7 @@ class EventControllerTests extends WebMockControllerTest {
                                 fieldWithPath("offline").description("has location ? true : false"),
                                 fieldWithPath("free").description("has basePrice or maxPrice ? false : true"),
                                 fieldWithPath("eventStatus").description("event's current status"),
+                                fieldWithPath("author").description("author"),
                                 //optional fields
                                 fieldWithPath("_links.self.href").ignored(),
                                 fieldWithPath("_links.query-events.href").ignored(),
@@ -548,6 +604,7 @@ class EventControllerTests extends WebMockControllerTest {
         EventDto eventDto = inputDataObject("not","found",0,0,"data");
         //when
         ResultActions perform = this.mockMvc.perform(put("/api/events/{id}", noSavedId)
+                .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaTypes.HAL_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(eventDto))
@@ -563,6 +620,7 @@ class EventControllerTests extends WebMockControllerTest {
         //when
         EventDto eventDto = new EventDto();
         ResultActions perform = this.mockMvc.perform(put("/api/events/{id}", originEvent.getId())
+                .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaTypes.HAL_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(eventDto))
@@ -578,6 +636,7 @@ class EventControllerTests extends WebMockControllerTest {
         //when
         EventDto updateEvent = inputDataObject("basePrice","bigger than",1000,500,"maxPrice");
         ResultActions perform = this.mockMvc.perform(put("/api/events/{id}", originalEvent.getId())
+                .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaTypes.HAL_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(updateEvent))

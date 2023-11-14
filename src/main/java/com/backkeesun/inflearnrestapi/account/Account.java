@@ -11,6 +11,7 @@ import java.util.Set;
 public class Account {
     @Id @GeneratedValue @Column(name = "account_id")
     private Integer id;
+    @Column(unique = true)
     private String email;
     private String password;
     @ElementCollection(fetch=FetchType.EAGER) // Set, Map 등을 써서 여러 데이터를 쓰는 경우
