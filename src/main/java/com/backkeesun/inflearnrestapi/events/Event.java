@@ -1,6 +1,8 @@
 package com.backkeesun.inflearnrestapi.events;
 
 import com.backkeesun.inflearnrestapi.account.Account;
+import com.backkeesun.inflearnrestapi.account.AccountSerializer;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import org.springframework.util.StringUtils;
 
@@ -49,6 +51,7 @@ public class Event {
 
     //author를 확인하기위한 단방향 매핑
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonSerialize(using = AccountSerializer.class)
     private Account author;
 
     /**
