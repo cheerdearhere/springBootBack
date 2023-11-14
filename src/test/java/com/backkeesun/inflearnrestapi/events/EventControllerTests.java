@@ -94,7 +94,7 @@ class EventControllerTests extends WebMockControllerTest {
                 .build();
         //when & then
         mockMvc.perform(post("/api/events")//HTTPRequestServlet Method
-                            .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth())
                             .contentType(MediaType.APPLICATION_JSON) // request 구체적 구현
                             .accept(MediaTypes.HAL_JSON) // HAL JSON response 요구
                             .content(objectMapper.writeValueAsString(event))// object를 JsonString으로 변환
@@ -134,7 +134,7 @@ class EventControllerTests extends WebMockControllerTest {
                 .build();
         //when & then
         mockMvc.perform(post("/api/events")//HTTPRequestServlet Method
-                            .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth())
                             .contentType(MediaType.APPLICATION_JSON) // request 구체적 구현
                             .accept(MediaTypes.HAL_JSON) // HAL JSON response 요구
                             .content(objectMapper.writeValueAsString(event))// object를 JsonString으로 변환
@@ -149,7 +149,7 @@ class EventControllerTests extends WebMockControllerTest {
         EventDto eventDto = EventDto.builder().build();
         //when then
         mockMvc.perform(post("/api/events")
-                        .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON)
                         .content(objectMapper.writeValueAsString(eventDto))
@@ -178,7 +178,7 @@ class EventControllerTests extends WebMockControllerTest {
                 .build();
         //when then
         mockMvc.perform(post("/api/events")
-                        .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON)
                         .content(objectMapper.writeValueAsString(eventDto))
@@ -211,9 +211,10 @@ class EventControllerTests extends WebMockControllerTest {
                 .build();
         //when & then
         mockMvc.perform(post("/api/events")
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaTypes.HAL_JSON)
-                .content(objectMapper.writeValueAsString(eventDto))
+                    .header(HttpHeaders.AUTHORIZATION,"Bearer "+getAuth())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .accept(MediaTypes.HAL_JSON)
+                    .content(objectMapper.writeValueAsString(eventDto))
         )
                 .andExpect(status().isCreated())
                 .andExpect(header().exists(HttpHeaders.LOCATION))
@@ -229,7 +230,7 @@ class EventControllerTests extends WebMockControllerTest {
     void createWithLink() throws Exception{
         EventDto eventDto = inputDataObject("이름", "설명 설명", 100, 200, "서울시 어딘가");
         mockMvc.perform(post("/api/events")
-                        .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON_VALUE)
                         .content(objectMapper.writeValueAsString(eventDto))
@@ -250,7 +251,7 @@ class EventControllerTests extends WebMockControllerTest {
     void restDocsBasic()throws Exception{
         EventDto eventDto = inputDataObject("이름", "설명 설명", 100, 200, "서울시 어딘가");
         mockMvc.perform(post("/api/events")
-                        .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON_VALUE)
                         .content(objectMapper.writeValueAsString(eventDto))
@@ -285,7 +286,7 @@ class EventControllerTests extends WebMockControllerTest {
     void restDocsField() throws Exception{
         EventDto eventDto = inputDataObject("이름", "설명 설명", 100, 200, "서울시 어딘가");
         mockMvc.perform(post("/api/events")
-                        .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth())
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaTypes.HAL_JSON_VALUE)
                         .content(objectMapper.writeValueAsString(eventDto))
@@ -343,6 +344,7 @@ class EventControllerTests extends WebMockControllerTest {
                                 fieldWithPath("offline").description("has location ? true : false"),
                                 fieldWithPath("free").description("has basePrice or maxPrice ? false : true"),
                                 fieldWithPath("eventStatus").description("event's current status"),
+                                fieldWithPath("author").description("author"),
                                 //optional fields
                                 fieldWithPath("_links.self.href").type(JsonFieldType.STRING).description("my href").optional(),
                                 fieldWithPath("_links.query-events.href").type(JsonFieldType.STRING).description("my href").optional(),
@@ -478,7 +480,7 @@ class EventControllerTests extends WebMockControllerTest {
         EventDto updateDto = inputDataObject("updated event Name", "test is success", 111, 222, "test city");
         //when
         ResultActions perform = this.mockMvc.perform(put("/api/events/{id}", event.getId())
-                .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaTypes.HAL_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(updateDto))
@@ -551,7 +553,7 @@ class EventControllerTests extends WebMockControllerTest {
         EventDto eventDto = inputDataObject("not","found",0,0,"data");
         //when
         ResultActions perform = this.mockMvc.perform(put("/api/events/{id}", noSavedId)
-                .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaTypes.HAL_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(eventDto))
@@ -567,7 +569,7 @@ class EventControllerTests extends WebMockControllerTest {
         //when
         EventDto eventDto = new EventDto();
         ResultActions perform = this.mockMvc.perform(put("/api/events/{id}", originEvent.getId())
-                .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaTypes.HAL_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(eventDto))
@@ -583,7 +585,7 @@ class EventControllerTests extends WebMockControllerTest {
         //when
         EventDto updateEvent = inputDataObject("basePrice","bigger than",1000,500,"maxPrice");
         ResultActions perform = this.mockMvc.perform(put("/api/events/{id}", originalEvent.getId())
-                .header(HttpHeaders.AUTHORIZATION, "Barer "+getAuth())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaTypes.HAL_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(updateEvent))
