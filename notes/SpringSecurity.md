@@ -601,9 +601,37 @@ public @interface CustomAccount {
   }
 ```
 등등
+* 주의 - 테스트 중 기존 이벤트 처리에서 작성자 처리를 안했기때문에 에러발생
 ## G. 출력값 제한하기 
 출력되는 값에 나가서는 안될 정보(password 등)를 제한하는 방법
+```asciidoc
+    1. 내보낼 DTO를 따로 만들기
+    2. JsonSerializer 사용하기
+```
+### 1. AccountSerializer.class 만들기
+모든 account가 json으로 처리될때(밖으로 보낼때) id와 email만 보냄
+```java
+@JsonComponent //모든 account가 json으로 처리될때(밖으로 보낼때) id와 email만 보냄
+public class AccountSerializer extends JsonSerializer<Account> {
+  @Override
+  public void serialize(Account account, JsonGenerator generator, SerializerProvider serializers) throws IOException {
+    generator.writeStartObject();
 
+    generator.writeNumberField("id",account.getId());
+    generator.writeStringField("email",account.getEmail());
+
+    generator.writeEndObject();
+  }
+}
+```
+event를 통할때만 쓰는경우 @JsonComponent를 붙이지 말고 Entity에서 직접 지정
+````java
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonSerialize(using = AccountSerializer.class) //직접
+    private Account author;
+````
+* 주의: 동명 이package
+![img.png](JsonSerializerAnnotation.png)
 ## H. Tips...
 ### 1. 권한을 처리할때
 Set을 SimpleGrantedAutority로 변환
