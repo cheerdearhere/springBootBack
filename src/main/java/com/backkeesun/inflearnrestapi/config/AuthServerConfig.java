@@ -26,17 +26,16 @@ public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {//"/
     public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
         security.passwordEncoder(passwordEncoder);//client_secret을 처리할때
     }
-    private final int TOKEN_VALID_TIME = 30 * 60 * 60;
     @Override
         public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
             clients.inMemory()//test용 실무에서는 .jdbc로 db처리
-                    .withClient("myClientId")
+                    .withClient("myapp")
                     .authorizedGrantTypes("password","refresh_token")
-                    .secret(passwordEncoder.encode("sec"))
                     .scopes("read","write")
-                    //토큰 만료시간(sec)
-//                    .accessTokenValiditySeconds(TOKEN_VALID_TIME)
-//                    .refreshTokenValiditySeconds(TOKEN_VALID_TIME)
+                    .secret(passwordEncoder.encode("1"))
+                    //  토큰 만료시간(sec)
+                    .accessTokenValiditySeconds(30 * 60)
+                    .refreshTokenValiditySeconds(60 * 60)
             ;
         }
 

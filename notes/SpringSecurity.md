@@ -163,7 +163,51 @@ AuthenticationManagerBean: 토큰 발행, 관리할 서버를 Bean으로 노툴
     }
 ```
 
-#### e. 설정 진행 : configure
+#### e. 설정 진행 (Securityconfig.class)
+- 토큰을 직접 생성하는 경우
+```java
+  @Value("${security.myKey}")
+  private String SECRET_KEY;
+  @Bean//AuthenticationManagerBean: 토큰 발행, 관리할 서버를 Bean으로 노툴
+  @Override
+  public AuthenticationManager authenticationManager() throws Exception {
+      final OAuth2AuthenticationManager oAuth2AuthenticationManager = new OAuth2AuthenticationManager();
+      oAuth2AuthenticationManager.setTokenServices(defaultTokenServices());
+      return oAuth2AuthenticationManager;
+  }
+  @Bean
+  public ResourceServerTokenServices defaultTokenServices() {
+      final DefaultTokenServices defaultTokenServices = new DefaultTokenServices();
+      defaultTokenServices.setTokenEnhancer(tokenEnhancerChain());
+      defaultTokenServices.setTokenStore(tokenStore());
+      return defaultTokenServices;
+  }
+
+  @Bean
+  public JwtAccessTokenConverter tokenEnhancer() {
+      final JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
+      jwtAccessTokenConverter.setSigningKey(SECRET_KEY);
+      return jwtAccessTokenConverter;
+  }
+  @Bean
+  public TokenEnhancerChain tokenEnhancerChain() {
+      final TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
+      tokenEnhancerChain.setTokenEnhancers(List.of(new CustomTokenEnhancer(), tokenEnhancer()));
+      return tokenEnhancerChain;
+  }
+
+  private static class CustomTokenEnhancer implements TokenEnhancer {
+      @Override
+      public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
+          final DefaultOAuth2AccessToken result = new DefaultOAuth2AccessToken(accessToken);
+          result.getAdditionalInformation().put("userId", accessToken.getAdditionalInformation().get("userId"));
+//            result.getAdditionalInformation().put("companyId", accessToken.getAdditionalInformation().get("companyId"));
+          return result;
+      }
+  }
+```
+- configure method 재정의
+
 userDetailsService & passwordEncoder(AuthenticationManagerBuidler auth)
 ```java
     @Override
@@ -273,33 +317,55 @@ security, clients, endpoint 설정
 @EnableAuthorizationServer
 @RequiredArgsConstructor
 public class AuthServerConfig extends AuthorizationServerConfigurerAdapter {
-    private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
-    private final AccountService accountService;
-    private final TokenStore tokenStore;
-    @Override
-    public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
-        security.passwordEncoder(passwordEncoder);//client_secret을 처리할때
-    }
+  private final PasswordEncoder passwordEncoder;
+  private final AuthenticationManager authenticationManager;
+  private final AccountService accountService;
+  private final TokenStore tokenStore;
+  @Override
+  public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
+      security.passwordEncoder(passwordEncoder);//client_secret을 처리할때
+  }
 
+  @Override
+  public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+      clients.inMemory()//test용 실무에서는 .jdbc로 db처리
+              .withClient("myApp")//client_id
+              .authorizedGrantTypes("password","refresh_token")//grant_type
+              .scopes("read","write")//app에서 정의한 범위
+              .secret(this.passwordEncoder.encode("passwd"))//client_secret
+              .accessTokenValiditySeconds(10 * 60)//토큰 만료시간(sec)
+              .refreshTokenValiditySeconds(6 * 10 * 60);
+  }
+  @Override
+  public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+    endpoints.authenticationManager(authenticationManager)//authentication처리때 사용할 이전에 등록한 bean 등록
+            .userDetailsService(accountService)
+            .tokenStore(tokenStore);
+  }
+```
+#### c. resources 설정
+```java
     @Override
-    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-        clients.inMemory()//test용 실무에서는 .jdbc로 db처리
-                .withClient("myApp")//client_id
-                .authorizedGrantTypes("password","refresh_token")//grant_type
-                .scopes("read","write")//app에서 정의한 범위
-                .secret(this.passwordEncoder.encode("passwd"))//client_secret
-                .accessTokenValiditySeconds(10 * 60)//토큰 만료시간(sec)
-                .refreshTokenValiditySeconds(6 * 10 * 60);
+    protected void configure(HttpSecurity http)throws Exception{
+        http.anonymous()//비인증 접근 허용
+                .and()//설정 병렬로 지정
+            .formLogin()//form login 설정
+//                .loginPage()//로그인 페이지 url
+//                .passwordParameter()//파라미터명
+//                .usernameParameter()
+//                .failureForwardUrl()//실패시 이동시킬 url
+//                .successForwardUrl()//성공시 이동시킬 url
+                //안해도 자동처리됨. 테스트용에서는 처리 안해도 기본페이지 제공
+                .and()
+//            .csrf().disable()//CSRF 방지
+            .authorizeRequests()//요청에 대한 처리지정
+                .mvcMatchers(HttpMethod.GET,"/api/**").anonymous() // 해당 /api/를 포함한 Get method 요청은 비로그인으로 처리
+                .anyRequest().authenticated()//그 외 나머지 요청은 다 요청
+        //JWT를 사용할 경우
+//            .formLogin().disable()//form login 설정
+//            .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
+            ;
     }
-
-    @Override
-    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
-        endpoints.authenticationManager(authenticationManager)//authentication처리때 사용할 이전에 등록한 bean 등록
-                .userDetailsService(accountService)
-                .tokenStore(tokenStore);
-    }
-}
 ```
 애러해결 못함.
 ```asciidoc
