@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.backkeesun.inflearnrestapi.mapper.AccountMapper"><!--  mapper 연결  -->
+<!--    <resultMap id="accountListDto" type="com.backkeesun.inflearnrestapi.dto.AccountListDto"></resultMap>-->
+    <select id="findUserList" resultType="com.backkeesun.inflearnrestapi.dto.AccountListDto">
+        SELECT
+            ACCOUNT_ID
+        ,   EMAIL
+        ,   ROLES
+        FROM
+            ACCOUNT
+        LIMIT 0, 10
+        ORDER BY ACCOUNT_ID DESC
+    </select>
+</mapper>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+    <settings>
+        <!--    camelCase to under_score    -->
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <!--    not null field    -->
+        <setting name="callSetterOnNulls" value="true"/>
+        <!--    accept null parameter    -->
+        <setting name="jdbcTypeForNull" value="NULL"/>
+    </settings>
+</configuration>
