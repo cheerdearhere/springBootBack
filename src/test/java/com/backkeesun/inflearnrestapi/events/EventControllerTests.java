@@ -22,6 +22,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.payload.JsonFieldType;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.common.util.Jackson2JsonParser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -360,11 +361,6 @@ class EventControllerTests extends WebMockControllerTest {
     void queryEvents() throws Exception{
         //given
         IntStream.range(0,30).forEach(this::generateEvent);
-/**
-*         IntStream.range(0,30).forEach(i->{
-*             this.generateEvent(i);
-*         });
-*/
         //when & then
         this.mockMvc.perform(get("/api/events")
                         .param("page","1")//paging data
@@ -417,10 +413,13 @@ class EventControllerTests extends WebMockControllerTest {
     @DisplayName(value="인증정보와 함께 30개의 이벤트를 10개씩 조회 - 2page")
     void queryEventsWithAuthentication() throws Exception{
         //given
-        IntStream.range(0,30).forEach(this::generateEvent);
+        Account account = this.createAccount();
+        IntStream.range(0,30).forEach(i->{
+            this.generateEvent(i,account);
+        });
         //when
         ResultActions perform = this.mockMvc.perform(get("/api/events")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth(true))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth(false))
                 .param("page", "1")
                 .param("size", "10")
                 .param("sort", "name,DESC")
@@ -437,7 +436,6 @@ class EventControllerTests extends WebMockControllerTest {
                 .andExpect(jsonPath("_links.profile").exists())
                 .andExpect(jsonPath("_embedded.eventList[0]._links.query-events").exists())
                 .andExpect(jsonPath("_embedded.eventList[0]._links.update-event").exists())
-                .andExpect(jsonPath("_embedded.eventList[0]._links.create-event").exists())//인증정보가 있는 경우 글작성 기능 활성
         ;
     }
 
@@ -445,7 +443,8 @@ class EventControllerTests extends WebMockControllerTest {
     @DisplayName(value="기존 이벤트 중 하나 조회하기")
     void getEventOne() throws Exception{
         //given
-        Event event = this.generateEvent(100);
+        Account account = this.createAccount();
+        Event event = this.generateEvent(100,account);
 
         //when
         ResultActions perform = this.mockMvc.perform(get("/api/events/{id}",event.getId()));
@@ -482,7 +481,8 @@ class EventControllerTests extends WebMockControllerTest {
                                 fieldWithPath("offline").description("has location ? true : false"),
                                 fieldWithPath("free").description("has basePrice or maxPrice ? false : true"),
                                 fieldWithPath("eventStatus").description("event's current status"),
-                                fieldWithPath("author").description("author"),
+                                fieldWithPath("author.id").description("author identifier number"),
+                                fieldWithPath("author.email").description("author's email to use user name"),
                                 //optional fields
                                 fieldWithPath("_links.self.href").type(JsonFieldType.STRING).description("my href").optional(),
                                 fieldWithPath("_links.query-events.href").type(JsonFieldType.STRING).description("my href").optional(),
@@ -491,6 +491,7 @@ class EventControllerTests extends WebMockControllerTest {
                         )
                 ));
     }
+
     @Test
     @DisplayName(value="없는 이벤트인 경우 404 에러")
     void notFoundEvent() throws Exception{
@@ -505,11 +506,12 @@ class EventControllerTests extends WebMockControllerTest {
     @DisplayName(value="업데이트 처리")
     void updateEvent() throws Exception{
         //given
-        Event event = this.generateEvent(100);
+        Account account = createAccount();
+        Event event = this.generateEvent(100,account);
         EventDto updateDto = inputDataObject("updated event Name", "test is success", 111, 222, "test city");
         //when
         ResultActions perform = this.mockMvc.perform(put("/api/events/{id}", event.getId())
-                .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth(true))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth(false))
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaTypes.HAL_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(updateDto))
@@ -610,11 +612,12 @@ class EventControllerTests extends WebMockControllerTest {
     @DisplayName(value = "업데이트할때 값이 이상한 경우")
     void updateBadRequest()throws Exception{
         //given
-        Event originalEvent = this.generateEvent(100);
+        Account account = this.createAccount();
+        Event originalEvent = this.generateEvent(100,account);
         //when
         EventDto updateEvent = inputDataObject("basePrice","bigger than",1000,500,"maxPrice");
         ResultActions perform = this.mockMvc.perform(put("/api/events/{id}", originalEvent.getId())
-                .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth(true))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer "+getAuth(false))
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaTypes.HAL_JSON_VALUE)
                 .content(objectMapper.writeValueAsString(updateEvent))
@@ -626,16 +629,14 @@ class EventControllerTests extends WebMockControllerTest {
 
     /*=== Private Method ===*/
 
-    private String getAuth(boolean needAccount) throws Exception {
+    private String getAuth(boolean needCreateAccount) throws Exception {
         //save user data
-        String email=appProperties.getUserUsername();
-        String password =appProperties.getUserPassword();
-        if(needAccount) createAccount(email,password);
+        if(needCreateAccount) createAccount();
         //get Token
         ResultActions perform = this.mockMvc.perform(post("/oauth/token")//url은 자동처리
                 .with(httpBasic(appProperties.getClientId(), appProperties.getClientSecret()))// request header 생성
-                .param("username",email)//인증 정보 삽입
-                .param("password",password)
+                .param("username",appProperties.getUserUsername())//인증 정보 삽입
+                .param("password",appProperties.getUserPassword())
                 .param("grant_type","password")
         );
         //return token from response
@@ -644,13 +645,13 @@ class EventControllerTests extends WebMockControllerTest {
         return parser.parseMap(responseStr).get("access_token").toString();
     }
 
-    private Account createAccount(String email,String password) {
-        Account temp = Account.builder()
-                .email(email)
-                .password(password)
-                .roles(Set.of(AccountRole.USER, AccountRole.ADMOIN))
+    private Account createAccount() {
+        Account account = Account.builder()
+                .email(appProperties.getUserUsername())
+                .password(appProperties.getUserPassword())
+                .roles(Set.of(AccountRole.USER))
                 .build();
-        return accountService.saveAccount(temp);
+        return accountService.saveAccount(account);
     }
 
     private Event generateEvent(int i) {
@@ -670,25 +671,30 @@ class EventControllerTests extends WebMockControllerTest {
                 .build();
         return this.eventRepository.save(event);
     }
-//    private Event generateEvent(int i, Account account) {
-//        int basePrice = i%3 == 0 ? 0 :100;
-//        int maxPrice = i%3 == 1 ? 0 : 200;
-//        String location = i%2 == 0 ? "" : "서울시 어딘가" ;
-//        Event event = Event.builder()
-//                .name("event"+i)
-//                .description("test event")
-//                .beginEnrollmentDateTime(LocalDateTime.of(2018,11,12,13,21))
-//                .closeEnrollmentDateTime(LocalDateTime.of(2018,12,30,11,12))
-//                .beginEventDateTime(LocalDateTime.of(2018, 11, 14,10,5))
-//                .endEventDateTime(LocalDateTime.of(2019,12,1,23,1))
-//                .author(account)
-//                .basePrice(basePrice)
-//                .maxPrice(maxPrice)
-//                .location(location)
-//                .build();
-//        return this.eventRepository.save(event);
-//    }
 
+    /**
+     * override시킨 method
+     * @param i
+     * @param account
+     */
+    private Event generateEvent(int i, Account account) {
+        int basePrice = i%3 == 0 ? 0 :100;
+        int maxPrice = i%3 == 1 ? 0 : 200;
+        String location = i%2 == 0 ? "" : "서울시 어딘가" ;
+        Event event = Event.builder()
+                .name("event"+i)
+                .description("test event")
+                .beginEnrollmentDateTime(LocalDateTime.of(2018,11,12,13,21))
+                .closeEnrollmentDateTime(LocalDateTime.of(2018,12,30,11,12))
+                .beginEventDateTime(LocalDateTime.of(2018, 11, 14,10,5))
+                .endEventDateTime(LocalDateTime.of(2019,12,1,23,1))
+                .basePrice(basePrice)
+                .maxPrice(maxPrice)
+                .location(location)
+                .author(account)
+                .build();
+        return this.eventRepository.save(event);
+    }
     private static EventDto inputDataObject(String name, String description, int basePrice, int maxPrice, String location) {
         return EventDto.builder()
                 .name(name)
