@@ -100,3 +100,50 @@ docker를 통해 설치하고 JPA를 사용하는경우 필요 x
 ```
 ### 2. docker를 사용해 컨테이너 실행
 [dockerScript.md](./dockerScript.md)  참고
+
+## B. Spring boot 버전을 변경하기전에...(migration)
+### 1. 스프링 부트 버전을 올리면 바뀔 수 있는 일
+```asciidoc
+    기본 (자동) 설정 값 변경
+    의존성 변경
+    기존 애플리케이션의 동작이 바뀌거나 컴파일 에러가 발생할 수 있다.
+```
+
+### 2. 스프링 부트 2.2.* 주요 변화
+```asciidoc
+    JUnit 4 -> JUnit 5
+    스프링 HATEOAS 버전이 올라가면서 스프링 HATEOAS의 API가 바뀌었다.
+```
+
+### 3. 스프링 HATEOAS
+```asciidoc
+    Resource -> EntityModel
+    Resources -> CollectionModel
+    PagedResrouces -> PagedModel
+    ResourceSupport -> RepresentationModel
+    assembler.toResource -> assembler.toModel
+    org.springframework.hateoas.mvc.ControllerLinkBuilder -> org.springframework.hateoas.server.mvc.WebMvcLinkBuilder
+    MediaTypes 중에 (UTF8)인코딩이 들어간 상수 제거.
+```
+### 4. JUnit 5
+```asciidoc
+    org.junit -> org.junit.jupiter
+    @Ignore -> @Disabled
+    @Before, @After -> @BeforeEach, @AfterEach
+    @BeforeAll, @AfterAll : test class 한번만 실행
+    @TestDescription (우리가 직접 만든 어노테이션) -> @DisplayName
+```
+### 5. 스프링 MVC 변경
+```asciidoc
+    MediaType 중에 (UTF8)인코딩이 들어간 상수 deprecation.
+```
+
+## C. migration 과정
+### 1. 기존 빌드, 세팅에서 테스트에 에러가 나지 않는지 확인
+버전변경이 아닌 로직이나 데이터 이상일 수 있으므로 우선 테스트를 진행해 에러를 확인한다. 
+### 2. Spring 버전 올리기
+우선은 boot버전만 올리고 테스트를 진행한다. 에러가 없으면 그대로 진행하면 되지만 변경점이 있다면 에러가 발생할거이고 이에대한 대응을 진행하면 된다.
+### 3. 테스트 도구 적용
+dependency에서 jupiter(JUnit5)에 vintage(JUnit4)가 들어 있으면 사용 가능
+
+
